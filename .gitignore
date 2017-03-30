@@ -1,3 +1,12 @@
+
+
+#Make file executables
+image_encoder
+
+#Testing Executables
+Image_Encoder
+Read
+
 # Prerequisites
 *.d
 
