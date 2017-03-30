@@ -14,6 +14,9 @@ LINK = g++
 # CPPFLAGS = 		# preprocessor flags
 CFLAGS = -Wall
 CXXFLAGS = -Wall
+
+VPATH = src
+
 #If nothing is specified with make add the optimizer flag
 all:	CFLAGS += -O
 all:	CXXFLAGS += -O	
