@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <cstdlib>
+#include <iomanip>
 using namespace std;
 
 int read_bin_int( ifstream &fin );
@@ -59,12 +60,7 @@ class Image
         streampos spot = fin.tellg();*/
         
         fin.close();
-        
-        while( fin.is_open() == true );
-        
         fin.clear();
-        
-        cout << "Magic Number: " << magic_number << endl;
         
         allocate_data();
         
@@ -149,7 +145,7 @@ class Image
             col_max *= 3;
     
         data = new int*[row];
-        for ( int i; i < row; i++ )
+        for ( int i = 0; i < row; i++ )
         {
             data[i] = new int[col_max];
         }
@@ -222,7 +218,12 @@ class Image
             fout << " " << max_val;
         fout << endl;
         
-        /*int max_col = col;
+        /*cout << "Magic Number: " << magic_number << endl;
+        cout << "Row Number: " << row << endl;
+        cout << "Col Number: " << col << endl;
+        cout << "Max Value: " << max_val << endl;*/
+        
+        int max_col = col;
         if ( magic_number % 3 == 0 )
             max_col *= 3;
         
@@ -233,7 +234,7 @@ class Image
                 //fprintf( fout, "%3d", data[i][j] );
                 fout << setw(3) << data[i][j] << " ";
             }
-        }*/
+        }
         
         fout.close();
         return;
@@ -277,7 +278,7 @@ int main()
 {
     //const char* doop = "test.ppm";
     Image img( "Images/test.ppm" );
-    img.print_data( "Images/output.ppm" );
+    img.print_data( "Images/output.txt" );
     return 0;
 }
 
