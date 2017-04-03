@@ -75,11 +75,37 @@ void huffman_encode( char** img, int height, int width )
     {
         for( int i = 0; i < height; i++ )
         {
-            bitstring = get_bitstring( img[i][j], root, hist );
+            bitstring += get_bitstring( img[i][j], root, hist );
         }
     }
-    ////////// HERE ///////////
     
+    // pad to a word boundary with zeros
+    if( bitstring.length() % 8 )
+        for( int i = 8 - bitstring.length() % 8; i > 0; i-- )
+            bitstring += "0"
+        
+    int temp;
+    int k = 0;
+    while( !binstring.empty() )
+    {
+        temp = 0;
+        for( int i = 0; i < 8; i++ )
+        {
+            if( bitstring.front() == "1" )
+                temp += 1;
+            bitstring.erase( bitstring.begin() );
+            temp *= 2;
+        }
+        img[k/width][k%width] = (char)temp;
+        k++;
+    }
+    
+    for( int j = k%width; j < width; j++ )
+        img[k/width][j] = (char)0;
+    
+    for( int i = k/width + 1; i < height; i++ )
+        for( int j = 0; j < width; j++ )
+            img[i][j] = (char)0;
     
     return;
 }
@@ -94,19 +120,19 @@ string get_bitstring( char symbol, huff_node* root, int* hist )
     {
         if( frequency < curr->frequency )
         {
-            bitstring.append( '0' );
+            bitstring += "0";
             curr = curr->left;
         }
         else
         {
-            bitstring.append( '1' );
+            bitstring += "1";
             curr = curr->right;
         }
     }
     
     if( curr->val == symbol && curr->frequency == frequency )
         return bitstring;
-    return string(""); 
+    return string("");
 }
 
 int* get_hist( char** img, int height, int width )
