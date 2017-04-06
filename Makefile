@@ -36,7 +36,7 @@ debug: image_encoder dpcm
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
 dpcm: dpcm.o predictive.o image_io.o 
 	$(LINK) -o $@ $^ $(LIBS)
-image_encoder: Image_Encoder.o bmprle.o huffman.o predictive.o
+image_encoder: Image_Encoder.o runlength.o huffman.o predictive.o
 	$(LINK) -o $@ $^ $(LIBS)
 # generic C and C++ targets for OpenGL programs consisting of only one file
 # type "make filename" (no extension) to build
