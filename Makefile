@@ -34,6 +34,8 @@ debug: image_encoder dpcm
 
 # MAKE allows the use of "wildcards", to make writing compilation instructions
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
+rle: runlength.o
+	$(LINK) -o $@ $^ $(LIBS)
 dpcm: dpcm.o predictive.o image_io.o 
 	$(LINK) -o $@ $^ $(LIBS)
 image_encoder: Image_Encoder.o runlength.o huffman.o predictive.o
