@@ -84,7 +84,7 @@ bool node_sort_freq( huff_node* first, huff_node* second )
 
 bool node_sort_val( huff_node* first, huff_node* second )
 {
-    if( first->val <= second->val )
+    if( first->val > second->val )
         return false;
     return true;
 }
@@ -102,13 +102,15 @@ int toInt(string bitString, int sLength )
     return num;
 }
 
-/* Doesn't work right */
 bool node_sort_bit( huff_node* first, huff_node* second )
 {
-    //if( first->bitstring.compare( second->bitstring ) <= 0 )
-    if( toInt( first->bitstring, first->bitstring.size() ) <= toInt( second->bitstring, second->bitstring.size() ) )
+    //if( toInt( first->bitstring, first->bitstring.size() ) <= toInt( second->bitstring, second->bitstring.size() ) )
+    if( first->bitstring.size() < second->bitstring.size() )
+        return true;
+    if( first->bitstring.size() > second->bitstring.size() )
         return false;
-    return true;
+    
+    return first->bitstring.compare( second->bitstring ) > 0;
 }
 
 /***********************************************************/
@@ -122,11 +124,44 @@ huff_node* huffman_tree( int* hist, int size );
 void huff_print_bit( huff_node* root );
 void huff_print( huff_node* root, int bars = 0 );
 
+void huffman_test()
+{
+    const unsigned int num = 6;
+    int hist[num] = { 25, 25, 20, 15, 10, 5 };
+    huff_node* root;
+    vector<huff_node*> leaves;
+    
+    root = huffman_tree( hist, num );
+    cascade_bitstring( root );
+    get_leaves( leaves, root );
+    
+    vector<huff_node*> leaves2 = leaves;
+    vector<huff_node*> leaves3 = leaves;
+    
+    sort( leaves.begin(), leaves.end(), node_sort_freq );
+    sort( leaves2.begin(), leaves2.end(), node_sort_val );
+    sort( leaves3.begin(), leaves3.end(), node_sort_bit );
+    
+    for( unsigned int i = 0; i < leaves.size(); i++ )
+    {
+        cout << "[ " << setw(5) << leaves[i]->frequency << " : " << setw(3) << (int)leaves[i]->val << " : " << setw(13) << leaves[i]->bitstring << " ]";
+        cout << setw( 6 ) << " ";
+        cout << "[ " << setw(5) << leaves2[i]->frequency << " : " << setw(3) << (int)leaves2[i]->val << " : " << setw(13) << leaves2[i]->bitstring << " ]";
+        cout << setw( 6 ) << " ";
+        cout << "[ " << setw(5) << leaves3[i]->frequency << " : " << setw(3) << (int)leaves3[i]->val << " : " << setw(13) << leaves3[i]->bitstring << " ]";
+        cout << endl;
+    }
+    cout << endl;
+    huff_print( root );
+    //huff_print_bit( root );
+    return;
+}
+
 void huffman_encode( Mat img )
 {
     int hist[256] = {0};
     int height = img.rows;
-    int width = img.cols;
+    int width = img.cols * 3;
     huff_node* root;
     string bitstring = "";
     vector<huff_node*> leaves;
@@ -138,39 +173,102 @@ void huffman_encode( Mat img )
     get_leaves( leaves, root );
     
     vector<huff_node*> leaves2 = leaves;
-    //vector<huff_node*> leaves3 = leaves;
+    vector<huff_node*> leaves3 = leaves;
     
-    //sort( leaves.begin(), leaves.end(), node_sort_freq );
+    cout << "Height: " << height << ", Width: " << width << endl;
+    
+    
+    /*cout << (int)img.at<uchar>( 0, 0 ) << ", ";
+    cout << (int)img.at<uchar>( 0, 1 ) << ", ";
+    cout << (int)img.at<uchar>( 0, 2 ) << endl;
+    cout << (int)img.at<uchar>( 0, 3 ) << ", ";
+    cout << (int)img.at<uchar>( 0, 4 ) << ", ";
+    cout << (int)img.at<uchar>( 0, 5 ) << endl;*/
+    
+    sort( leaves.begin(), leaves.end(), node_sort_freq );
     sort( leaves2.begin(), leaves2.end(), node_sort_val );
-    //sort( leaves3.begin(), leaves3.end(), node_sort_bit );
+    sort( leaves3.begin(), leaves3.end(), node_sort_bit );
     
-    /*for( unsigned int i = 0; i < leaves.size(); i++ )
+    for( unsigned int i = 0; i < leaves.size(); i++ )
     {
-        cout << "[ " << setw(5) << leaves[i]->frequency << " : " << setw(3) << (int)leaves[i]->val << " : " << setw(12) << leaves[i]->bitstring << " ]";
+        cout << "[ " << setw(5) << leaves[i]->frequency << " : " << setw(3) << (int)leaves[i]->val << " : " << setw(13) << leaves[i]->bitstring << " ]";
         cout << setw( 6 ) << " ";
-        cout << "[ " << setw(5) << leaves2[i]->frequency << " : " << setw(3) << (int)leaves2[i]->val << " : " << setw(12) << leaves2[i]->bitstring << " ]";
-        //cout << setw( 6 ) << " ";
-        //cout << "[ " << setw(5) << leaves3[i]->frequency << " : " << setw(3) << (int)leaves3[i]->val << " : " << setw(12) << leaves3[i]->bitstring << " ]";
+        cout << "[ " << setw(5) << leaves2[i]->frequency << " : " << setw(3) << (int)leaves2[i]->val << " : " << setw(13) << leaves2[i]->bitstring << " ]";
+        cout << setw( 6 ) << " ";
+        cout << "[ " << setw(5) << leaves3[i]->frequency << " : " << setw(3) << (int)leaves3[i]->val << " : " << setw(13) << leaves3[i]->bitstring << " ]";
         cout << endl;
-    }*/
+    }
+    
+    int total = 0;
+    int sizes = 0;
+    for( unsigned int i = 0; i < leaves.size(); i++ )
+    {
+        total += leaves[i]->frequency;
+        sizes += leaves[i]->frequency * leaves[i]->bitstring.size();
+    }
+    cout << "Average Compressed Length: " << (double)sizes / total << endl;
+    
+    bool in_order = true;
+    for( unsigned i = 1; i < leaves3.size(); i++ )
+    {
+        if( leaves3[i-1]->frequency < leaves3[i]->frequency )
+        {
+            in_order = false;
+            break;
+        }
+    }
+    cout << "Leaves are " << (in_order?"":"not ") << "in order." << endl;
     
     //huff_print( root );
     //huff_print_bit( root );
-    //return;
+    return;
     
+    int put_i = 0;
+    int put_j = 0;
+    string big = "";
     for( int i = 0; i < height; i++ )
+    {
         for( int j = 0; j < width; j++ )
+        {
+            //cout << "row: " << i << ", col: " << j << endl;
             bitstring += leaves2[(int)img.at<uchar>( i, j )]->bitstring;
+            big += leaves2[(int)img.at<uchar>( i, j )]->bitstring;
+            //cout << "Before: " << bitstring << endl;
+            while( bitstring.size() >= 8 && ( put_i < i || ( put_i == i && put_j <= j ) ) )
+            {
+                img.at<uchar>( put_i, put_j ) = (unsigned char)toInt( bitstring, 8 );
+                bitstring.erase( 0, 8 );
+                put_j++;
+                if( put_j >= width )
+                {
+                    put_i++;
+                    put_j = 0;
+                }
+            }
+            //cout << "After: " << bitstring << endl;
+        }
+    }
             //bitstring += get_bitstring( img.at<uchar>( i, j ), root, hist );
     
-    cout << "After bitstring built" << endl;
+    //cout << "After bitstring built" << endl;
+    cout << "Total compressed bits: " << big.size() << endl;
+    cout << "Remaining bits: " << bitstring.size() << endl;
     
     // pad to a word boundary with zeros
     if( bitstring.length() % 8 )
+    {
         for( int i = 8 - bitstring.length() % 8; i > 0; i-- )
             bitstring += "0";
+        img.at<uchar>( put_i, put_j ) = (unsigned char)toInt( bitstring, 8 );
+        put_j++;
+        if( put_j >= width )
+        {
+            put_i++;
+            put_j = 0;
+        }
+    }
         
-    int temp;
+    /*int temp;
     int k = 0;
     while( !bitstring.empty() )
     {
@@ -179,9 +277,19 @@ void huffman_encode( Mat img )
         img.at<uchar>( k/width, k%width ) = (unsigned char)temp;
         k++;
         bitstring.erase( bitstring.begin(), bitstring.begin() + 8 );
-    }
+    }*/
 
     cout << "Get here" << endl;
+    
+    if( put_i < height )
+    {
+        for(; put_j < width; put_j++ )
+            img.at<uchar>( put_i, put_j ) = (unsigned char)0;
+            
+        for( put_i++; put_i < height; put_i++ )
+            for( put_j = 0; put_j < width; put_j++ )
+                img.at<uchar>( put_i, put_j ) = (unsigned char)0;
+    }
     
     /*int temp;
     int k = 0;
@@ -199,12 +307,12 @@ void huffman_encode( Mat img )
         k++;
     }*/
     
-    for( int j = k%width; j < width; j++ )
+    /*for( int j = k%width; j < width; j++ )
         img.at<uchar>( k/width, j ) = (char)0;
     
     for( int i = k/width + 1; i < height; i++ )
         for( int j = 0; j < width; j++ )
-            img.at<uchar>( i, j ) = (char)0;
+            img.at<uchar>( i, j ) = (char)0;*/
     
     delete root;
     
@@ -314,8 +422,8 @@ huff_node* huffman_tree( int* hist, int size )
         if( huff_list.size() > 0 )
         {
             int i = huff_list.size() - 1;
-            while( i > 0 && huff_list[i]->frequency < node->frequency ) i--;
-            huff_list.insert( huff_list.begin() + i, node );
+            while( i > -1 && huff_list[i]->frequency < node->frequency ) i--;
+            huff_list.insert( huff_list.begin() + i + 1, node );
         }
         else
             huff_list.push_back( node );
@@ -367,9 +475,10 @@ void huff_print( huff_node* root, int bars )
 int main()
 {
     vector<int> params;
-    Mat image = imread( "Images/Hummingbird.jpg" );
+    Mat image = imread( "Images/Hummingbird_txt.ppm" );
     
     huffman_encode( image );
+    //huffman_test();
     
     return 0;
     
