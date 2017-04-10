@@ -12,8 +12,8 @@ CXX = g++
 LINK = g++
 # Turn on optimization and warnings (add -g for debugging with gdb):
 # CPPFLAGS = 		# preprocessor flags
-CFLAGS = -Wall
-CXXFLAGS = -g -Wall -std=c++11
+#CFLAGS = -Wall
+CXXFLAGS = -g -std=c++11 #-Wall
 
 #Opencv library to be linked with
 OPENCV = `pkg-config opencv --cflags --libs`
