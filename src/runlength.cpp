@@ -6,7 +6,7 @@ const int TOLERANCERANGE = 4; // this is a decent change across all three channe
 
 enum colors {BLUE, GREEN, RED};
 
-int imageTypeCheck(Mat image)
+bool imageTypeCheck(Mat image)
 {
 	int temp = image.type();
 	bool grayscale = false;
