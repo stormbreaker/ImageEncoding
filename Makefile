@@ -29,7 +29,7 @@ all:	image_encoder
 #If debug is specified add the debugging flag
 debug: CFLAGS += -g
 debug: CXXFLAG += -g
-debug: image_encoder dpcm
+debug: all
 #-----------------------------------------------------------------------
 
 # MAKE allows the use of "wildcards", to make writing compilation instructions
@@ -38,7 +38,7 @@ rle: runlength.o
 	$(LINK) -o $@ $^ $(LIBS)
 dpcm: dpcm.o predictive.o image_io.o
 	$(LINK) -o $@ $^ $(LIBS)
-image_encoder: Image_Encoder.o runlength.o huffman.o predictive.o
+encode: encode.o framework.o runlength.o huffman.o predictive.o
 	$(LINK) -o $@ $^ $(LIBS)
 huff: huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
