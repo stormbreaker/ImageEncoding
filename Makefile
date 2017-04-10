@@ -25,7 +25,7 @@ VPATH = src
 #If nothing is specified with make add the optimizer flag
 all:	CFLAGS += -O
 all:	CXXFLAGS += -O	
-all:	image_encoder
+all:	encode
 #If debug is specified add the debugging flag
 debug: CFLAGS += -g
 debug: CXXFLAG += -g
