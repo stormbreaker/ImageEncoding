@@ -38,7 +38,7 @@ rle: runlength.o rlemain.o
 	$(LINK) -o $@ $^ $(LIBS)
 dpcm: dpcm.o predictive.o image_io.o
 	$(LINK) -o $@ $^ $(LIBS)
-encode: encode.o framework.o runlength.o huffman.o predictive.o
+encode: encode.o framework.o runlength.o predictive.o #huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
 huff: huffman.o
 	$(LINK) -o $@ $^ $(LIBS)

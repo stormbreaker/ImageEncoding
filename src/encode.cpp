@@ -18,6 +18,7 @@ int main( int argc, char **argv )
     {
         case 0:
             //call rle-r
+			runlengthEncodeRange(image, image.rows, image.cols, false);
             break;
         case 1:
             //call rle-b;

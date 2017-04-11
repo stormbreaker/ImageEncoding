@@ -13,5 +13,6 @@ typedef unsigned char uchar;
 
 void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale);
 void runlengthDecodeRange(char** compressedBytes, bool isGrayscale);
+void writeHeader(int height, int width, string filetype);
 
 #endif

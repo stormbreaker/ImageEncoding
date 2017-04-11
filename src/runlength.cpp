@@ -20,6 +20,11 @@ void writeToStream(unsigned char count, unsigned char* rgbValues, bool isGraysca
 	}
 }
 
+void writeHeader(int height, int width, string filetype)
+{
+	
+}
+
 void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale)
 {
 	unsigned char currentRunLength = 0;
