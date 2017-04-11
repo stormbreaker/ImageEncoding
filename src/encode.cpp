@@ -1,6 +1,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "framework.h"
+#include "runlength.h"
+
 int main( int argc, char **argv )
 {
 
