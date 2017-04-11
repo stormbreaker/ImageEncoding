@@ -1,35 +1,13 @@
 #include "runlength.h"
-#include <opencv2/highgui/highgui.hpp>
 
 
 const int TOLERANCERANGE = 4; // this is a decent change across all three channels
 
 enum colors {BLUE, GREEN, RED};
 
-bool imageTypeCheck(Mat image)
-{
-	int temp = image.type();
-	bool grayscale = false;
-	switch (temp)
-	{
-		case CV_8UC3:
-			cout << "RGB" << endl;
-			grayscale = false;
-			break;
-		case CV_8UC1:
-			cout << "grayscale" << endl;
-			grayscale = true;
-			break;
-		default:
-			cout << "um" << endl;
-			break;
-	};
-	return grayscale;
-}
-
 unsigned char** compressedImage = NULL;
 
-void writeToStream(unsigned char count, char* rgbValues, bool isGrayscale)
+void writeToStream(unsigned char count, unsigned char* rgbValues, bool isGrayscale)
 {
 	if (isGrayscale)
 	{
@@ -38,6 +16,7 @@ void writeToStream(unsigned char count, char* rgbValues, bool isGrayscale)
 	else
 	{
 		// write all three bytes
+		cout << (int)count << " " << (int)rgbValues[0] << " " << (int)rgbValues[1] << " " << (int)rgbValues[0] << endl;
 	}
 }
 
@@ -45,7 +24,10 @@ void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale)
 {
 	unsigned char currentRunLength = 0;
 	Vec3b basePixel = {0, 0, 0};  
-	int count = 0;
+	unsigned char count = 0;
+
+	unsigned char tempChars[3];
+
 	for (int rowIndex = 0; rowIndex < height; rowIndex++)
 	{
 		for (int columnIndex = 0; columnIndex < width; columnIndex++)
@@ -53,25 +35,22 @@ void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale)
 			//cout << rowIndex << " " << columnIndex << endl;
 			if (abs(image.at<Vec3b>(rowIndex, columnIndex)[RED] - basePixel[RED]) > 4 && abs(image.at<Vec3b>(rowIndex, columnIndex)[GREEN] - basePixel[GREEN]) > 4 && abs(image.at<Vec3b>(rowIndex, columnIndex)[BLUE] - basePixel[BLUE]) > 4)
 			{
-				// TODO write data to compression stream
-				count++;
-				if (rowIndex < 20)
-					cout << count << "occurred: " << rowIndex << " " << columnIndex << endl;
-				basePixel = image.at<Vec3b>(rowIndex, columnIndex);
+				for (int i = 0; i < 3; i++)
+				{
+					tempChars[i] = basePixel[i];
+				}
+				writeToStream(count, tempChars, false);
+				count = 0;
+				basePixel = image.at<Vec3b>(rowIndex, columnIndex); 
 			}
+			count++;
 		}
-		// TODO write out count and value no matter what
 	}
 }
 
 void runlengthDecodeRange(char** compressedBytes, bool isGrayscale)
 {
-
-}
-
-int main()
-{
-	Mat image = imread("/home/student/7285523/csc442final/Images/circles.png", -1);
-	bool grayscaleFlag = imageTypeCheck(image);
-	runlengthEncodeRange(image, image.rows, image.cols, grayscaleFlag);
+	// read in width and height
+	// use width to count number of pixels to read.  will need a temporary column counter
+	// read in the pairs
 }

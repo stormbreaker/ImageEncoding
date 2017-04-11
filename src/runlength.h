@@ -4,6 +4,7 @@
 #include <opencv2/core/core.hpp>
 #include <iostream>
 #include <string>
+#include <fstream>
 
 using namespace std;
 using namespace cv;
