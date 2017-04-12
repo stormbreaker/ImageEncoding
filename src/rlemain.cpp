@@ -8,15 +8,15 @@ bool imageTypeCheck(Mat image)
 	switch (temp)
 	{
 		case CV_8UC3:
-			cout << "RGB" << endl;
+			//cout << "RGB" << endl;
 			grayscale = false;
 			break;
 		case CV_8UC1:
-			cout << "grayscale" << endl;
+			//cout << "grayscale" << endl;
 			grayscale = true;
 			break;
 		default:
-			cout << "um" << endl;
+			//cout << "um" << endl;
 			break;
 	};
 	return grayscale;
@@ -24,7 +24,7 @@ bool imageTypeCheck(Mat image)
 
 int main()
 {
-	Mat image = imread("/home/student/7285523/csc442final/Images/circles.png", -1);
+	Mat image = imread("/home/student/7285523/csc442final/images/circles.png", -1);
 	bool grayscaleFlag = imageTypeCheck(image);
 	runlengthEncodeRange(image, image.rows, image.cols, grayscaleFlag);
 }

@@ -9,20 +9,28 @@ unsigned char** compressedImage = NULL;
 
 void writeToStream(unsigned char count, unsigned char* rgbValues, bool isGrayscale)
 {
+	ofstream fout;
+	fout.open("testimage.bin", ios::binary | ios::out | ios::app);
 	if (isGrayscale)
 	{
 		// write a single byte
 	}
 	else
 	{
+		fout << count << rgbValues[0] << rgbValues[1] << rgbValues[2];
 		// write all three bytes
-		cout << (int)count << " " << (int)rgbValues[0] << " " << (int)rgbValues[1] << " " << (int)rgbValues[0] << endl;
+		cout << (int)count << " " << (int)rgbValues[0] << " " << (int)rgbValues[1] << " " << (int)rgbValues[2] << endl;
 	}
+	fout.close();
 }
 
-void writeHeader(int height, int width, string filetype)
+void writeHeader(int height, int width, string filetype, bool grayscale)
 {
-	
+	ofstream fout;
+	fout.open("testimage.bin", ios::out);
+	fout << height << " " << width << " " << filetype << " " << grayscale <<endl;
+
+	fout.close();
 }
 
 void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale)
@@ -33,7 +41,9 @@ void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale)
 
 	unsigned char tempChars[3];
 
-	basePixel = image.at<Vec3b>(0, 0);
+	writeHeader(height, width, "png", isGrayscale);
+
+//	basePixel = image.at<Vec3b>(0, 0);
 
 	for (int rowIndex = 0; rowIndex < height; rowIndex++)
 	{
@@ -98,7 +108,7 @@ void runlengthEncodeRangeChannels(Mat image, int height, int width, bool isGrays
 
 void runlengthDecodeRange(char** compressedBytes, bool isGrayscale)
 {
-	// read in width and height
+	// read in width, height, file type and whether or not is grayscale 
 	// use width to count number of pixels to read.  will need a temporary column counter
 	// read in the pairs
 }
