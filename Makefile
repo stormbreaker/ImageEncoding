@@ -12,8 +12,8 @@ CXX = g++
 LINK = g++
 # Turn on optimization and warnings (add -g for debugging with gdb):
 # CPPFLAGS = 		# preprocessor flags
-CFLAGS = -Wall
-CXXFLAGS = -g -Wall -std=c++11
+CFLAGS = #-Wall
+CXXFLAGS = -g -std=c++11 #-Wall
 
 #Opencv library to be linked with
 OPENCV = `pkg-config opencv --cflags --libs`
@@ -25,20 +25,20 @@ VPATH = src
 #If nothing is specified with make add the optimizer flag
 all:	CFLAGS += -O
 all:	CXXFLAGS += -O	
-all:	image_encoder
+all:	encode
 #If debug is specified add the debugging flag
 debug: CFLAGS += -g
 debug: CXXFLAG += -g
-debug: image_encoder dpcm
+debug: all
 #-----------------------------------------------------------------------
 
 # MAKE allows the use of "wildcards", to make writing compilation instructions
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
-rle: runlength.o
+rle: runlength.o rlemain.o
 	$(LINK) -o $@ $^ $(LIBS)
 dpcm: dpcm.o predictive.o image_io.o
 	$(LINK) -o $@ $^ $(LIBS)
-image_encoder: Image_Encoder.o runlength.o huffman.o predictive.o
+encode: encode.o framework.o runlength.o predictive.o #huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
 huff: huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
