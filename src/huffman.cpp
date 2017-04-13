@@ -30,6 +30,25 @@ struct bitstream
     
     ~bitstream(){}
     
+    bool bad_write_bit( int bit )
+    {
+        if( !stream )
+            return false;
+    
+        /*if( bit )
+            buffer |= (1<<out_bit);
+        out_bit++;
+        if( out_bit >= 8 )
+        {
+            out_bit = 0;
+            stream.write( (char *) &buffer, sizeof(char) );
+            buffer = (unsigned char)0;
+        }*/
+        //stream.write( (char *) &bit, sizeof(int) );
+        stream << bit << endl;
+        return true;
+    }
+    
     bool write_bit( int bit )
     {
         if( !stream )
@@ -41,9 +60,11 @@ struct bitstream
         if( out_bit >= 8 )
         {
             out_bit = 0;
-            stream << buffer;
+            stream.write( (char *) &buffer, sizeof(char) );
             buffer = (unsigned char)0;
         }
+        /*stream.write( (char *) &bit, sizeof(int) );
+        stream << endl;*/
         return true;
     }
     
@@ -54,6 +75,8 @@ struct bitstream
             
         for( int i = 7; i >= 0; i-- )
             write_bit( c>>i & 1 );
+        //stream << endl;
+        //stream << (int)c << endl;
             
         return true;
     }
@@ -72,6 +95,9 @@ struct bitstream
             if( bit ) c |= bit<<i;
             i--;
         }
+        //stream.read( (char *) &c, sizeof(char) ); // skip endl
+        //stream.read( (char *) &c, sizeof(char) );
+        //c = (unsigned char)bit;
             
         return true;
     }
@@ -84,15 +110,17 @@ struct bitstream
         char local_buff;
         if( in_bit == 0 )
         {
-            if( !stream.get( local_buff ) )
+            if( !stream.read( (char *) &buffer, sizeof(char) ) )
                 return false;
-            buffer = (unsigned char)local_buff;
+            //buffer = (unsigned char)local_buff;
         }
         
         bit = buffer >> (7-in_bit) & 1;
         
         in_bit++;
         in_bit %= 8;
+        
+        //stream >> bit;
         
         return true;
     }
@@ -134,8 +162,7 @@ struct huff_node
     right(nullptr)
     {}
     
-    huff_node( char val ) :
-    val(val),
+    huff_node() :
     frequency(-1),
     bitstring(string("")),
     left(nullptr),
@@ -226,6 +253,10 @@ void huff_print_bit( huff_node* root );
 void huff_print( huff_node* root, int bars = 0 );
 void write_hufftree( bitstream &bout, huff_node* root );
 void read_hufftree( bitstream &bout, huff_node* &root );
+unsigned char read_next_huff( bitstream &bout, huff_node* root );
+
+void write_hist( bitstream &bout, int* hist, int size );
+void read_hist( bitstream &bout, int* hist, int size );
 
 void huffman_test()
 {
@@ -260,226 +291,11 @@ void huffman_test()
     return;
 }
 
-void old_huffman_encode( Mat img, string outfile )
-{
-    int hist[256] = {0};
-    int height = img.rows;
-    int width = img.cols * 3;
-    huff_node* root;
-    string bitstring = "";
-    vector<huff_node*> leaves;
-    ofstream fout;
-    fout.open( "compressed.txt", ofstream::out | ofstream::trunc );
-    if( !fout )
-    {
-        cout << "Error: could not open compressed.txt for writing" << endl;
-        return;
-    }
-    
-    // Create the histograph for the image
-    get_hist( hist, img );
-    root = huffman_tree( hist, 256 );
-    cascade_bitstring( root );
-    get_leaves( leaves, root );
-    
-    /*cout << "Height: " << height << ", Width: " << width << endl;
-    
-    cout << (int)img.at<uchar>( 0, 0 ) << ", ";
-    cout << (int)img.at<uchar>( 0, 1 ) << ", ";
-    cout << (int)img.at<uchar>( 0, 2 ) << endl;
-    cout << (int)img.at<uchar>( 0, 3 ) << ", ";
-    cout << (int)img.at<uchar>( 0, 4 ) << ", ";
-    cout << (int)img.at<uchar>( 0, 5 ) << endl;*/
-    
-    vector<huff_node*> leaves2 = leaves;
-    //vector<huff_node*> leaves3 = leaves;
-    
-    //sort( leaves.begin(), leaves.end(), node_sort_freq );
-    sort( leaves2.begin(), leaves2.end(), node_sort_val );
-    /*sort( leaves3.begin(), leaves3.end(), node_sort_bit );
-    
-    for( unsigned int i = 0; i < leaves.size(); i++ )
-    {
-        cout << "[ " << setw(5) << leaves[i]->frequency << " : " << setw(3) << (int)leaves[i]->val << " : " << setw(13) << leaves[i]->bitstring << " ]";
-        cout << setw( 6 ) << " ";
-        cout << "[ " << setw(5) << leaves2[i]->frequency << " : " << setw(3) << (int)leaves2[i]->val << " : " << setw(13) << leaves2[i]->bitstring << " ]";
-        cout << setw( 6 ) << " ";
-        cout << "[ " << setw(5) << leaves3[i]->frequency << " : " << setw(3) << (int)leaves3[i]->val << " : " << setw(13) << leaves3[i]->bitstring << " ]";
-        cout << endl;
-    }
-    
-    int total = 0;
-    int sizes = 0;
-    for( unsigned int i = 0; i < leaves.size(); i++ )
-    {
-        total += leaves[i]->frequency;
-        sizes += leaves[i]->frequency * leaves[i]->bitstring.size();
-    }
-    cout << "Average Compressed Length: " << (double)sizes / total << endl;
-    
-    bool in_order = true;
-    for( unsigned i = 1; i < leaves3.size(); i++ )
-    {
-        if( leaves3[i-1]->frequency < leaves3[i]->frequency )
-        {
-            in_order = false;
-            break;
-        }
-    }
-    cout << "Leaves are " << (in_order?"":"not ") << "in order." << endl;
-    
-    //huff_print( root );
-    //huff_print_bit( root );
-    return;*/
-    
-    /*int put_i = 0;
-    int put_j = 0;
-    //string big = "";
-    for( int i = 0; i < height; i++ )
-    {
-        for( int j = 0; j < width; j++ )
-        {
-            //cout << "row: " << i << ", col: " << j << endl;
-            bitstring += leaves2[(int)img.at<uchar>( i, j )]->bitstring;
-            //big += leaves2[(int)img.at<uchar>( i, j )]->bitstring;
-            //cout << "Before: " << bitstring << endl;
-            while( bitstring.size() >= 8 && ( put_i < i || ( put_i == i && put_j <= j ) ) )
-            {
-                img.at<uchar>( put_i, put_j ) = (unsigned char)toInt( bitstring, 8 );
-                bitstring.erase( 0, 8 );
-                put_j++;
-                if( put_j >= width )
-                {
-                    put_i++;
-                    put_j = 0;
-                }
-            }
-            //cout << "After: " << bitstring << endl;
-        }
-    }*/
-            //bitstring += get_bitstring( img.at<uchar>( i, j ), root, hist );
-    
-    //cout << "put_i = " << put_i << endl;
-    //cout << "put_j = " << put_j << endl;
-    
-    //cout << "After bitstring built" << endl;
-    //cout << "Total compressed bits: " << big.size() << endl;
-    //cout << "Remaining bits: " << bitstring.size() << endl;
-    
-    // pad to a word boundary with zeros
-    /*if( bitstring.length() % 8 )
-    {
-        for( int i = 8 - bitstring.length() % 8; i > 0; i-- )
-            bitstring += "0";
-        img.at<uchar>( put_i, put_j ) = (unsigned char)toInt( bitstring, 8 );
-        put_j++;
-        if( put_j >= width )
-        {
-            put_i++;
-            put_j = 0;
-        }
-    }*/
-    
-    int col = 0;
-    for( int i = 0; i < height; i++ )
-    {
-        for( int j = 0; j < width; j++ )
-        {
-            bitstring += leaves2[(int)img.at<uchar>( i, j )]->bitstring;
-
-            while( bitstring.size() >= 8 )
-            {
-                fout << toInt( bitstring, 8 ) << " ";
-                bitstring.erase( 0, 8 );
-                col++;
-                if( col >= width )
-                {
-                    col = 0;
-                    fout << endl;
-                }
-            }
-        }
-    }
-    
-    // pad to a word boundary with zeros
-    if( bitstring.length() % 8 )
-    {
-        for( int i = 8 - bitstring.length() % 8; i > 0; i-- )
-            bitstring += "0";
-        fout << toInt( bitstring, 8 );
-    }
-        
-    /*int temp;
-    int k = 0;
-    while( !bitstring.empty() )
-    {
-        cout << bitstring.size() << endl;
-        temp = toInt( bitstring, 8 );
-        img.at<uchar>( k/width, k%width ) = (unsigned char)temp;
-        k++;
-        bitstring.erase( bitstring.begin(), bitstring.begin() + 8 );
-    }*/
-
-    //cout << "Get here" << endl;
-    
-    /*if( put_i < height )
-    {
-        for(; put_j < width; put_j++ )
-            img.at<uchar>( put_i, put_j ) = (unsigned char)0;
-            
-        for( put_i++; put_i < height; put_i++ )
-            for( put_j = 0; put_j < width; put_j++ )
-                img.at<uchar>( put_i, put_j ) = (unsigned char)0;
-    }*/
-    
-    /*int temp;
-    int k = 0;
-    while( !bitstring.empty() )
-    {
-        temp = 0;
-        for( int i = 0; i < 8; i++ )
-        {
-            if( bitstring.front() == '1' )
-                temp += 1;
-            bitstring.erase( bitstring.begin() );
-            temp *= 2;
-        }
-        img.at<uchar>( k/width, k%width ) = (unsigned char)temp;
-        k++;
-    }*/
-    
-    /*for( int j = k%width; j < width; j++ )
-        img.at<uchar>( k/width, j ) = (char)0;
-    
-    for( int i = k/width + 1; i < height; i++ )
-        for( int j = 0; j < width; j++ )
-            img.at<uchar>( i, j ) = (char)0;*/
-    
-    /*fout.open( "output.txt", ofstream::out | ofstream::trunc );
-    if( fout )
-    {
-        for( int i = 0; i < height; i++ )
-        {
-            for( int j = 0; j < width; j++ )
-            {
-                fout << (int)img.at<uchar>( i, j ) << " ";
-            }
-            fout << endl;
-        }
-    }*/
-    
-    fout.close();
-    
-    delete root;
-    
-    return;
-}
-
 void huffman_encode( Mat img, string outfile )
 {
     int hist[256] = {0};
     int height = img.rows;
-    int width = img.cols * 3;
+    int width = img.cols;
     huff_node* root = nullptr;
     string bitstring = "";
     vector<huff_node*> leaves;
@@ -492,15 +308,20 @@ void huffman_encode( Mat img, string outfile )
         return;
     }
     
+    // Write the height and width
+    bout.stream.write( (char*) &height, sizeof(int) );
+    bout.stream.write( (char*) &width, sizeof(int) );
+    
+    // Multiply for each channel
+    width *= 3;
+    
     // Create the histograph for the image
     get_hist( hist, img );
     root = huffman_tree( hist, 256 );
     
-    write_hufftree( bout, root );
-    bout.flush_bits();
-    bout.stream << endl;
+    write_hist( bout, hist, 256 );
     
-    /*cascade_bitstring( root );
+    cascade_bitstring( root );
     get_leaves( leaves, root );
     
     sort( leaves.begin(), leaves.end(), node_sort_val );
@@ -510,7 +331,12 @@ void huffman_encode( Mat img, string outfile )
     {
         for( int j = 0; j < width; j++ )
         {
-            bitstring += leaves[(int)img.at<uchar>( i, j )]->bitstring;
+            bitstring = leaves[(int)img.at<uchar>( i, j )]->bitstring;
+            
+            for( int k = 0; k < bitstring.size(); k++ )
+                bout.write_bit( (int)bitstring[k] - (int)'0' );
+        
+            /*bitstring += leaves[(int)img.at<uchar>( i, j )]->bitstring;
 
             while( bitstring.size() >= 8 )
             {
@@ -522,12 +348,14 @@ void huffman_encode( Mat img, string outfile )
                     col = 0;
                     fout << endl;
                 }
-            }
+            }*/
         }
     }
     
+    bout.flush_bits();
+    
     // pad to a word boundary with zeros
-    if( bitstring.length() % 8 )
+    /*if( bitstring.length() % 8 )
     {
         for( int i = 8 - bitstring.length() % 8; i > 0; i-- )
             bitstring += "0";
@@ -541,14 +369,72 @@ void huffman_encode( Mat img, string outfile )
     return;
 }
 
+void huffman_decode( Mat &img, string infile )
+{
+    int hist[256] = {0};
+    int height;
+    int width;
+    huff_node* root = nullptr;
+    vector<huff_node*> leaves;
+    
+    bitstream bin;
+    bin.stream.open( infile, fstream::in | fstream::binary );
+    if( !bin.stream )
+    {
+        cout << "Error: could not open " << infile << " for reading." << endl;
+        return;
+    }
+    
+    // Read the height and width
+    bin.stream.write( (char*) &height, sizeof(int) );
+    bin.stream.write( (char*) &width, sizeof(int) );
+    
+    img = Mat( height, width, CV_8UC3 );
+    width *= 3;
+    
+    read_hist( bin, hist, 256 );
+    root = huffman_tree( hist, 256 );
+    cascade_bitstring( root );
+    get_leaves( leaves, root );
+    sort( leaves.begin(), leaves.end(), node_sort_val );
+    
+    for( int i = 0; i < height; i++ )
+        for( int j = 0; j < width; j++ )
+            img.at<uchar>( i, j ) = read_next_huff( bin, root );
+            
+    bin.stream.close();
+    
+    delete root;
+    
+    return;
+}
+
+unsigned char read_next_huff( bitstream &bin, huff_node* root )
+{
+    int bit;
+    
+    // Traverse huff tree
+    while( !root->is_leaf() )
+    {
+        bin.read_bit( bit );
+        if( bit )
+            root = root->right;
+        else
+            root = root->left;
+    }
+    
+    return root->val;
+}
+
 void huffman_encode_test( Mat img, string outfile )
 {
     int hist[256] = {0};
+    //int hist[6] = { 25, 25, 20, 15, 10, 5 };
     huff_node* root = nullptr;
     vector<huff_node*> leaves;
     
     bitstream bout;
-    bout.stream.open( outfile, fstream::out | fstream::trunc | fstream::binary );
+    bout.stream.open( outfile, ios::out | ios::trunc | ios::binary );
     if( !bout.stream )
     {
         cout << "Error: could not open " << outfile << " for writing." << endl;
@@ -558,9 +444,11 @@ void huffman_encode_test( Mat img, string outfile )
     // Create the histograph for the image
     get_hist( hist, img );
     root = huffman_tree( hist, 256 );
+    //root = huffman_tree( hist, 6 );
     
-    write_hufftree( bout, root );
-    bout.flush_bits();
+    //write_hufftree( bout, root );
+    //bout.flush_bits();
+    write_hist( bout, hist, 256 );
     bout.stream << endl;
     
     bout.stream.close();
@@ -595,6 +483,7 @@ void huffman_decode_test( string infile )
 {
     huff_node* root = nullptr;
     vector<huff_node*> leaves;
+    int hist[256] = {0};
     
     bitstream bout;
     bout.stream.open( infile, fstream::in | fstream::binary );
@@ -604,17 +493,18 @@ void huffman_decode_test( string infile )
         return;
     }
     
-    char local;
+    /*char local;
     local = bout.stream.get();
     if( local == std::char_traits<char>::eof() )
         cout << "Other" << endl;
     cout << local << endl;
     
     bout.stream.close();
-    return;
+    return;*/
     
-    read_hufftree( bout, root );
+    //read_hufftree( bout, root );
     
+    read_hist( bout, hist, 256 );
     bout.stream.close();
     
     fstream fout;
@@ -626,6 +516,7 @@ void huffman_decode_test( string infile )
         return;
     }
     
+    root = huffman_tree( hist, 256 );
     cascade_bitstring( root );
     get_leaves( leaves, root );
     sort( leaves.begin(), leaves.end(), node_sort_val );
@@ -640,6 +531,20 @@ void huffman_decode_test( string infile )
     
     delete root;
     
+    return;
+}
+
+void write_hist( bitstream &bout, int* hist, int size )
+{
+    bout.stream.write( (char*)hist, sizeof(int) * size );
+
+    return;
+}
+
+void read_hist( bitstream &bout, int* hist, int size )
+{
+    bout.stream.read( (char*)hist, sizeof(int) * size );
+
     return;
 }
 
@@ -668,10 +573,11 @@ void read_hufftree( bitstream &bout, huff_node* &root )
     if( !bout.read_bit( bit ) )
         return;
     
+    root = new huff_node();
     if( bit == 1 )
     {
         bout.read_byte( c );
-        root = new huff_node( c );
+        root->val = c;
     }
     else
     {
@@ -835,19 +741,44 @@ void huff_print( huff_node* root, int bars )
     return;
 }
 
+void copy_img( Mat orig )
+{
+    vector<int> params;
+    int height = orig.rows;
+    int width = orig.cols;
+    
+    Mat cpy( height, width, CV_8UC3 );
+    width *= 3;
+    for( int i = 0; i < height; i++ )
+        for( int j = 0; j < width; j++ )
+            cpy.at<uchar>( i, j ) = orig.at<uchar>( i, j );
+    
+    params.push_back( CV_IMWRITE_PXM_BINARY );
+    params.push_back( 0 );
+    
+    imwrite( "output.ppm", cpy, params );
+    return;
+}
+
 int main()
 {
     vector<int> params;
-    Mat image = imread( "Images/Hummingbird_txt.ppm" );
+    Mat in_image = imread( "images/Hummingbird_txt.ppm" );
     
+    //copy_img( image );
+    
+    huffman_encode( in_image, "compressed2.bin" );
     //huffman_encode_test( image, "compressed2.bin" );
-    huffman_decode_test( "compressed2.bin" );
+    //huffman_decode_test( "compressed2.bin" );
     //huffman_test();
     
-    //params.push_back( CV_IMWRITE_PXM_BINARY );
-    //params.push_back( 0 );
+    Mat out_image;
+    huffman_decode( out_image, "compressed2.bin" );
     
-    //imwrite( "Images/output.pbm", params );
+    params.push_back( CV_IMWRITE_PXM_BINARY );
+    params.push_back( 0 );
+    
+    imwrite( "output.ppm", out_image, params );
     
     return 0;
 }
