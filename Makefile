@@ -12,8 +12,8 @@ CXX = g++
 LINK = g++
 # Turn on optimization and warnings (add -g for debugging with gdb):
 # CPPFLAGS = 		# preprocessor flags
-CFLAGS = #-Wall
-CXXFLAGS = -g -std=c++11 #-Wall
+CFLAGS = -Wall
+CXXFLAGS = -g -std=c++11 -Wall
 
 #Opencv library to be linked with
 OPENCV = `pkg-config opencv --cflags --libs`
@@ -40,7 +40,7 @@ dpcm: dpcm.o predictive.o image_io.o
 	$(LINK) -o $@ $^ $(LIBS)
 encode: encode.o framework.o runlength.o predictive.o #huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
-huff: huffman.o
+huff: huffman.o bitstream.o huffnode.o
 	$(LINK) -o $@ $^ $(LIBS)
 # generic C and C++ targets for OpenGL programs consisting of only one file
 # type "make filename" (no extension) to build
