@@ -23,31 +23,12 @@ struct bitstream
     
     bitstream()
     {
-        in_bit = 0;
-        out_bit = 0;
+        in_bit = 7;
+        out_bit = 7;
         buffer = (unsigned char)0;
     }
     
     ~bitstream(){}
-    
-    bool bad_write_bit( int bit )
-    {
-        if( !stream )
-            return false;
-    
-        /*if( bit )
-            buffer |= (1<<out_bit);
-        out_bit++;
-        if( out_bit >= 8 )
-        {
-            out_bit = 0;
-            stream.write( (char *) &buffer, sizeof(char) );
-            buffer = (unsigned char)0;
-        }*/
-        //stream.write( (char *) &bit, sizeof(int) );
-        stream << bit << endl;
-        return true;
-    }
     
     bool write_bit( int bit )
     {
@@ -55,16 +36,14 @@ struct bitstream
             return false;
     
         if( bit )
-            buffer |= (1<<out_bit);
-        out_bit++;
-        if( out_bit >= 8 )
+            buffer |= 1 << out_bit;
+        out_bit--;
+        if( out_bit < 0 )
         {
-            out_bit = 0;
+            out_bit = 7;
             stream.write( (char *) &buffer, sizeof(char) );
             buffer = (unsigned char)0;
         }
-        /*stream.write( (char *) &bit, sizeof(int) );
-        stream << endl;*/
         return true;
     }
     
@@ -75,8 +54,6 @@ struct bitstream
             
         for( int i = 7; i >= 0; i-- )
             write_bit( c>>i & 1 );
-        //stream << endl;
-        //stream << (int)c << endl;
             
         return true;
     }
@@ -95,9 +72,6 @@ struct bitstream
             if( bit ) c |= bit<<i;
             i--;
         }
-        //stream.read( (char *) &c, sizeof(char) ); // skip endl
-        //stream.read( (char *) &c, sizeof(char) );
-        //c = (unsigned char)bit;
             
         return true;
     }
@@ -107,20 +81,17 @@ struct bitstream
         if( !stream )
             return false;
     
-        char local_buff;
-        if( in_bit == 0 )
+        if( in_bit == 7 )
         {
             if( !stream.read( (char *) &buffer, sizeof(char) ) )
                 return false;
-            //buffer = (unsigned char)local_buff;
         }
         
-        bit = buffer >> (7-in_bit) & 1;
+        bit = buffer>>in_bit & 1;
         
-        in_bit++;
-        in_bit %= 8;
-        
-        //stream >> bit;
+        in_bit--;
+        if( in_bit < 0 )
+            in_bit = 7;
         
         return true;
     }
@@ -130,8 +101,12 @@ struct bitstream
         if( !stream )
             return false;
     
-        while( out_bit != 0 )
-            write_bit(0);
+        if( out_bit != 7 )
+        {
+            out_bit = 7;
+            stream.write( (char *) &buffer, sizeof(char) );
+            buffer = (unsigned char)0;
+        }
             
         return true;
     }
@@ -301,7 +276,7 @@ void huffman_encode( Mat img, string outfile )
     vector<huff_node*> leaves;
     
     bitstream bout;
-    bout.stream.open( outfile, ofstream::out | ofstream::trunc | ofstream::binary );
+    bout.stream.open( outfile, ios::out | ios::trunc | ios::binary );
     if( !bout.stream )
     {
         cout << "Error: could not open " << outfile << " for writing." << endl;
@@ -318,13 +293,12 @@ void huffman_encode( Mat img, string outfile )
     // Create the histograph for the image
     get_hist( hist, img );
     root = huffman_tree( hist, 256 );
-    
-    write_hist( bout, hist, 256 );
-    
     cascade_bitstring( root );
     get_leaves( leaves, root );
-    
     sort( leaves.begin(), leaves.end(), node_sort_val );
+    
+    //write_hist( bout, hist, 256 );
+    write_hufftree( bout, root );
     
     int col = 0;
     for( int i = 0; i < height; i++ )
@@ -378,7 +352,7 @@ void huffman_decode( Mat &img, string infile )
     vector<huff_node*> leaves;
     
     bitstream bin;
-    bin.stream.open( infile, fstream::in | fstream::binary );
+    bin.stream.open( infile, ios::in | ios::binary );
     if( !bin.stream )
     {
         cout << "Error: could not open " << infile << " for reading." << endl;
@@ -386,14 +360,15 @@ void huffman_decode( Mat &img, string infile )
     }
     
     // Read the height and width
-    bin.stream.write( (char*) &height, sizeof(int) );
-    bin.stream.write( (char*) &width, sizeof(int) );
+    bin.stream.read( (char*) &height, sizeof(int) );
+    bin.stream.read( (char*) &width, sizeof(int) );
     
     img = Mat( height, width, CV_8UC3 );
     width *= 3;
     
-    read_hist( bin, hist, 256 );
-    root = huffman_tree( hist, 256 );
+    read_hufftree( bin, root );
+    //read_hist( bin, hist, 256 );
+    //root = huffman_tree( hist, 256 );
     cascade_bitstring( root );
     get_leaves( leaves, root );
     sort( leaves.begin(), leaves.end(), node_sort_val );
@@ -446,15 +421,14 @@ void huffman_encode_test( Mat img, string outfile )
     root = huffman_tree( hist, 256 );
     //root = huffman_tree( hist, 6 );
     
-    //write_hufftree( bout, root );
-    //bout.flush_bits();
-    write_hist( bout, hist, 256 );
-    bout.stream << endl;
+    write_hufftree( bout, root );
+    bout.flush_bits();
+    //write_hist( bout, hist, 256 );
     
     bout.stream.close();
 
     fstream fout;
-    fout.open( "precompressed.txt", ofstream::out | ofstream::trunc );
+    fout.open( "precompressed.txt", ios::out | ios::trunc );
     if( !fout )
     {
         cout << "Error: could not open precompressed.txt for writing." << endl;
@@ -486,7 +460,7 @@ void huffman_decode_test( string infile )
     int hist[256] = {0};
     
     bitstream bout;
-    bout.stream.open( infile, fstream::in | fstream::binary );
+    bout.stream.open( infile, ios::in | ios::binary );
     if( !bout.stream )
     {
         cout << "Error: could not open " << infile << " for reading." << endl;
@@ -502,13 +476,13 @@ void huffman_decode_test( string infile )
     bout.stream.close();
     return;*/
     
-    //read_hufftree( bout, root );
+    read_hufftree( bout, root );
     
-    read_hist( bout, hist, 256 );
+    //read_hist( bout, hist, 256 );
     bout.stream.close();
     
     fstream fout;
-    fout.open( "postcompressed.txt", ofstream::out | ofstream::trunc );
+    fout.open( "postcompressed.txt", ios::out | ios::trunc );
     if( !fout )
     {
         cout << "Error: could not open postcompressed.txt for writing." << endl;
@@ -516,7 +490,7 @@ void huffman_decode_test( string infile )
         return;
     }
     
-    root = huffman_tree( hist, 256 );
+    //root = huffman_tree( hist, 256 );
     cascade_bitstring( root );
     get_leaves( leaves, root );
     sort( leaves.begin(), leaves.end(), node_sort_val );
@@ -565,24 +539,24 @@ void write_hufftree( bitstream &bout, huff_node* root )
     return;
 }
 
-void read_hufftree( bitstream &bout, huff_node* &root )
+void read_hufftree( bitstream &bin, huff_node* &root )
 {
     int bit;
     unsigned char c;
     
-    if( !bout.read_bit( bit ) )
+    if( !bin.read_bit( bit ) )
         return;
     
     root = new huff_node();
     if( bit == 1 )
     {
-        bout.read_byte( c );
+        bin.read_byte( c );
         root->val = c;
     }
     else
     {
-        read_hufftree( bout, root->left );
-        read_hufftree( bout, root->right );
+        read_hufftree( bin, root->left );
+        read_hufftree( bin, root->right );
     }
 
     return;
@@ -768,7 +742,7 @@ int main()
     //copy_img( image );
     
     huffman_encode( in_image, "compressed2.bin" );
-    //huffman_encode_test( image, "compressed2.bin" );
+    //huffman_encode_test( in_image, "compressed2.bin" );
     //huffman_decode_test( "compressed2.bin" );
     //huffman_test();
     
@@ -780,6 +754,42 @@ int main()
     
     imwrite( "output.ppm", out_image, params );
     
+    return 0;
+}
+
+int not_main()
+{
+    bitstream bout;
+    bitstream bin;
+    
+    bout.stream.open( "test.bin", ios::out | ios::trunc | ios::binary );
+    bout.write_bit(0);
+    bout.write_bit(1);
+    bout.write_bit(0);
+    bout.write_bit(1);
+    bout.write_bit(1);
+    bout.write_bit(0);
+    bout.write_bit(0);
+    bout.write_bit(1);
+    bout.write_bit(0);
+    bout.write_bit(1);
+    bout.write_bit(1);
+    bout.write_bit(0);
+    bout.flush_bits();
+    bout.stream.close();
+    
+    bin.stream.open( "test.bin", ios::in | ios::binary );
+    int bit;
+    
+    for( int i = 0; i < 12; i++ )
+    {
+        bin.read_bit( bit );
+        cout << bit;
+    }
+    cout << endl;
+    
+    bin.stream.close();
+
     return 0;
 }
 
