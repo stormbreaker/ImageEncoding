@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <algorithm>
-//#include <string>
 #include <iostream>
 #include <iomanip>
 
@@ -17,12 +16,13 @@
 using namespace cv;
 
 void huffman_encode( Mat img, string outfile );
-void cascade_bitstring( huffnode* root );
-void get_leaves( vector<huffnode*> &leaves, huffnode* root );
+void huffman_decode( Mat &img, string infile );
+
 void get_hist( int* hist, Mat img );
 huffnode* huffman_tree( int* hist, int size );
-void huff_print_bit( huffnode* root );
-void huff_print( huffnode* root, int bars = 0 );
+void cascade_bitstring( huffnode* root );
+void get_leaves( vector<huffnode*> &leaves, huffnode* root );
+
 unsigned char read_next_huff( bitstream &bout, huffnode* root );
 
 void write_hist( bitstream &bout, int* hist, int size );

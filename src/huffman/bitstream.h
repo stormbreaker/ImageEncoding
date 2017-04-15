@@ -11,7 +11,8 @@ class bitstream
     int in_bit;
     int out_bit;
     
-    unsigned char buffer;
+    unsigned char out_buffer;
+    unsigned char in_buffer;
     
     public:
     
