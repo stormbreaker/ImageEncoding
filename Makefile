@@ -12,8 +12,8 @@ CXX = g++
 LINK = g++
 # Turn on optimization and warnings (add -g for debugging with gdb):
 # CPPFLAGS = 		# preprocessor flags
-CFLAGS = -Wall
-CXXFLAGS = -std=c++11 -Wall
+CFLAGS = -g -Wall
+CXXFLAGS = -g -std=c++11 -Wall
 
 #Opencv library to be linked with
 OPENCV = `pkg-config opencv --cflags --libs`
@@ -23,8 +23,8 @@ LIBS = $(OPENCV)
 VPATH = src:src/huffman
 
 #If nothing is specified with make add the optimizer flag
-all:	CFLAGS += -O
-all:	CXXFLAGS += -O	
+all:	CFLAGS += -g -O
+all:	CXXFLAGS += -g -O	
 all:	encode
 #If debug is specified add the debugging flag
 debug: CFLAGS += -g
