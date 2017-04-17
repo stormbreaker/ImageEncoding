@@ -24,7 +24,11 @@ bool imageTypeCheck(Mat image)
 
 int main()
 {
-	Mat image = imread("/home/student/7285523/csc442final/images/circles.png", -1);
-	bool grayscaleFlag = imageTypeCheck(image);
-	runlengthEncodeRange(image, image.rows, image.cols, grayscaleFlag);
+	Mat image = imread("/home/student/7285523/csc442final/images/Hummingbird.jpg", -1);
+	
+	runlengthEncodeRange(image, image.rows, image.cols);
+	runlengthDecodeRange();
+
+
+	return 0;
 }

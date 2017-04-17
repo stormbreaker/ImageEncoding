@@ -2,6 +2,7 @@
 #define BTK_RUNLENGTH
 
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -11,8 +12,9 @@ using namespace cv;
 
 typedef unsigned char uchar;
 
-void runlengthEncodeRange(Mat image, int height, int width, bool isGrayscale);
-void runlengthDecodeRange(char** compressedBytes, bool isGrayscale);
-void writeHeader(int height, int width, string filetype);
+void runlengthEncodeRange(Mat image, int height, int width);
+void runlengthDecodeRange();
+void writeHeader(int height, int width, char* filetype, int bits, char lossless);
+void writeToStream(unsigned char count, unsigned char* rgbValues);
 
 #endif
