@@ -1,5 +1,7 @@
 #include "huffman.h"
 
+const int channels = 3; // Number of channels in a pixel
+
 void huffman_encode( Mat img, string outfile )
 {
     int hist[256] = {0}; // Image histogram
@@ -7,7 +9,8 @@ void huffman_encode( Mat img, string outfile )
     int width = img.cols; // Width of image
     huffnode* root = nullptr; // Root of Huffman tree
     string bitstring; // Huffman bitstrings for encoded values
-    vector<huffnode*> leaves; // Vector of the leaves of the Huffman tree
+     // Array of the leaves of the Huffman tree
+    huffnode* leaves[256] = {nullptr}; // Initiallize elems to nullptr
     
     // Bitstream for the compressed output file
     bitstream bout;
@@ -19,18 +22,25 @@ void huffman_encode( Mat img, string outfile )
     }
     
     // Write the height and width
-    bout.stream.write( (char*) &height, sizeof(int) );
-    bout.stream.write( (char*) &width, sizeof(int) );
+    bout.write( (char*) &height, sizeof(int) );
+    bout.write( (char*) &width, sizeof(int) );
     
     // Multiply for each channel
-    width *= 3;
+    width *= channels;
     
     get_hist( hist, img ); // Create the histograph for the image
+    
+    // Calculate and display entropy of original image
+    cout << "Entropy: " << calc_entropy( height, width, hist, 256 ) << endl;
+    
     root = huffman_tree( hist, 256 ); // Create the Huffman tree
     cascade_bitstring( root ); // Computes the bitstrings for the leaves
     get_leaves( leaves, root ); // Extracts a list of the leaves
     // Sorts the leaves by the symbol they represent
-    sort( leaves.begin(), leaves.end(), huffnode::node_sort_val );
+    //sort( leaves, leaves + 256, huffnode::node_sort_val );
+    
+    // Calculate and display average bits per compressed symbol
+    cout << "Average Bits per Value: " << avg_bits_compressed( leaves, height, width ) << endl;
     
     //write_hist( bout, hist, 256 ); // Store histogram to file
     write_hufftree( bout, root ); // Store Huffman tree to file
@@ -49,6 +59,9 @@ void huffman_encode( Mat img, string outfile )
         }
     }
     
+    // Calculate and display the ratio between number of compressed bytes to number of original bytes
+    cout << "Compression Ratio: " << (double)bout.bytes_written / ( height * width ) << endl;
+    
     // Flush and close the stream
     bout.flush_bits(); // Ensures that all bits have been written
     bout.stream.close();
@@ -65,7 +78,8 @@ void huffman_decode( Mat &img, string infile )
     int height; // Height of image
     int width; // Width of image
     huffnode* root = nullptr; // Root of Huffman tree
-    vector<huffnode*> leaves; // Vector of the leaves of the Huffman tree
+     // Array of the leaves of the Huffman tree
+    huffnode* leaves[256] = {nullptr}; // Initiallize elems to nullptr
     
     // Bitstream for the compressed input file
     bitstream bin;
@@ -84,7 +98,7 @@ void huffman_decode( Mat &img, string infile )
     img = Mat( height, width, CV_8UC3 );
     
     // Multiply for each channel
-    width *= 3;
+    width *= channels;
     
     read_hufftree( bin, root ); // Read Huffman tree from file
     //read_hist( bin, hist, 256 ); // Read histogram from file
@@ -93,7 +107,7 @@ void huffman_decode( Mat &img, string infile )
     cascade_bitstring( root ); // Computes the bitstrings for the leaves
     get_leaves( leaves, root ); // Extracts a list of the leaves
     // Sorts the leaves by the symbol they represent
-    sort( leaves.begin(), leaves.end(), huffnode::node_sort_val );
+    //sort( leaves, leaves + 256, huffnode::node_sort_val );
     
     // Loop through img, decoding its values from file
     for( int i = 0; i < height; i++ )
@@ -135,7 +149,7 @@ unsigned char read_next_huff( bitstream &bin, huffnode* root )
 void write_hist( bitstream &bout, int* hist, int size )
 {
     // Store the data from the hist int array to file
-    bout.stream.write( (char*)hist, sizeof(int) * size );
+    bout.write( (char*)hist, sizeof(int) * size );
 
     return;
 }
@@ -204,7 +218,7 @@ void read_hufftree( bitstream &bin, huffnode* &root )
 void get_hist( int* hist, Mat img )
 {
     int height = img.rows;
-    int width = img.cols * 3; // Multiply for each channel
+    int width = img.cols * channels; // Multiply for each channel
     
     // Loop through img, counting the number of times each value occures
     for( int i = 0; i < height; i++ )
@@ -279,7 +293,7 @@ void cascade_bitstring( huffnode* root )
     return;
 }
 
-void get_leaves( vector<huffnode*> &leaves, huffnode* root )
+void get_leaves( huffnode* leaves[256], huffnode* root )
 {
     if( root == nullptr )
         return;
@@ -293,11 +307,51 @@ void get_leaves( vector<huffnode*> &leaves, huffnode* root )
     }
     else
     {
-        // This node is a leaf, so put it in the list
-        leaves.push_back( root );
+        // This node is a leaf, so put it in the list,
+        // at the spot indicated by the nodes value
+        leaves[(int)root->val] = root;
     }
     
     return;
+}
+
+/****************************************************************/
+
+// Calculates the total amount of entropy in a
+// given image based on its histogram and size
+double calc_entropy( int height, int width, int* hist, int size )
+{
+    int total = height * width; // Total number of symbols
+    double entropy = 0.0; // Start calculated entropy at 0
+    double probability; // The fraction of symbols that are a specific value
+    
+    // Sum the products of the probabilities with their log
+    for( int i = 0; i < size; i++ )
+    {
+        probability = (double)hist[i] / total;
+        if( probability != 0 )
+            entropy += probability * log2( probability );
+    }
+    
+    // The entropy is the negation of the calculated sum
+    return -entropy;
+}
+
+// Calculates the average number of bits used to represent an encoded symbol
+double avg_bits_compressed( huffnode* leaves[256], int height, int width )
+{
+    int total = height * width; // Total number of symbols
+    unsigned int bits = 0; // Total number of bits, starts at 0
+    
+    // Sum the total number of bits used to represent symbols
+    for( unsigned int i = 0; i < 256; i++ )
+    {
+        if( leaves[i] != nullptr )
+            bits += leaves[i]->frequency * leaves[i]->bitstring.size();
+    }
+    
+    // Return the ratio
+    return (double)bits / total;
 }
 
 /****************************************************************/

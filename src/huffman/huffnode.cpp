@@ -59,7 +59,7 @@ bool huffnode::is_leaf()
     return left == nullptr && right == nullptr;
 }
 
-// Static function for telling how to sort nodes by their frequencies
+// Static function for telling how to sort nodes pointers by their frequencies
 bool huffnode::node_sort_freq( huffnode* first, huffnode* second )
 {
     if( first->frequency <= second->frequency )
@@ -67,7 +67,7 @@ bool huffnode::node_sort_freq( huffnode* first, huffnode* second )
     return true;
 }
 
-// Static function for telling how to sort nodes by their values
+// Static function for telling how to sort nodes pointers by their values
 bool huffnode::node_sort_val( huffnode* first, huffnode* second )
 {
     if( first->val > second->val )
@@ -75,7 +75,7 @@ bool huffnode::node_sort_val( huffnode* first, huffnode* second )
     return true;
 }
 
-// Static function for telling how to sort nodes by their bitstrings
+// Static function for telling how to sort nodes pointers by their bitstrings
 bool huffnode::node_sort_bit( huffnode* first, huffnode* second )
 {
     // First compare with string length

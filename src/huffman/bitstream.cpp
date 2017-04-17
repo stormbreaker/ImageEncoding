@@ -6,13 +6,21 @@ bitstream::bitstream() :
 in_bit(7), // Start with the most significant bit
 out_bit(7), // Start with the most significant bit
 out_buffer((unsigned char)0), // Start the buffer with all 0 bits
-in_buffer((unsigned char)0) // Start the buffer with all 0 bits
+in_buffer((unsigned char)0), // Start the buffer with all 0 bits
+bytes_written(0) // Start with 0 bytes written
 {}
 
 // Empty Destructor
 bitstream::~bitstream(){}
 
 /***********************************/
+
+ostream& bitstream::write( const char* s, streamsize n )
+{
+    // Add to total number of bytes written
+    bytes_written += (int)n;
+    return stream.write( s, n );
+}
 
 bool bitstream::write_bit( int bit )
 {
@@ -29,6 +37,7 @@ bool bitstream::write_bit( int bit )
     if( out_bit < 0 )
     {
         out_bit = 7; // Reset the current bit
+        bytes_written += 1; // Increment number of bytes written
         // Write the buffer
         stream.write( (char *) &out_buffer, sizeof(char) );
         out_buffer = (unsigned char)0; // Reset the buffer
@@ -100,6 +109,7 @@ bool bitstream::flush_bits()
     {
         // Write the buffer as-is to the file
         stream.write( (char *) &out_buffer, sizeof(char) );
+        bytes_written += 1; // Increment number of bytes written
         
         out_bit = 7; // Reset the current bit
         out_buffer = (unsigned char)0; // Reset the buffer
