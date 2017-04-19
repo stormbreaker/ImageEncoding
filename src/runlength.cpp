@@ -7,16 +7,21 @@ enum colors {BLUE, GREEN, RED};
 
 unsigned char** compressedImage = NULL;
 
-void writeToStream(unsigned char count, unsigned char rgbValues)
+void writeToStream(unsigned char count, unsigned char rgbValues, vector<unsigned char>& channel)
+{
+	channel.push_back(count);
+	channel.push_back(rgbValues);
+	//cout << channel.size() << endl;
+}
+
+void writeChannelToFile(vector<unsigned char> channel)
 {
 	ofstream fout;
-	fout.open("testimage.bin", ios::binary | ios::out | ios::app);
+	unsigned char* channelArray = &channel[0];
 
-	fout.write((char*)&count, 1);
-	fout.write((char*)&rgbValues, 1);
-	// write all three bytes
-	//cout << (int)count << " " << (int) rgbValues << endl;
-
+	fout.open("testimage.bin", ios::out | ios::binary | ios::app);
+	//cout << "in write to file" << channel.size() << endl;
+	fout.write((char*) channelArray, channel.size());
 	fout.close();
 }
 
@@ -25,13 +30,14 @@ void writeHeader(int height, int width, char* filetype, int bits, char lossless)
 	// this function should essentially write all of the information necessary for the decoder
 	// to operate.  This include the width, height, type of file
 	ofstream fout;
+
 	fout.open("testimage.bin", ios::out | ios::binary);
 	fout.write((char*)&height, 4);
 	fout.write((char*)&width, 4);
 	fout.write(filetype, 3);
 	fout.write((char*)&bits, 4);
 	fout.write((char*)&lossless, 1);
-
+	cout << "wrote\n";
 	fout.close();
 }
 
@@ -40,11 +46,29 @@ void runlengthEncodeRange(Mat image, int height, int width)
 	unsigned char currentIntensity = 0;
 
 	unsigned char count;
+	int numberOfChannels;
+	char lossless;
+	int numberOfBits;
 
-	writeHeader(height, width, "png", 24, 0);
+	vector<unsigned char> channels[3];
+
+	if (image.type() == CV_8UC1)
+	{
+		numberOfChannels = 1;
+		numberOfBits = 8;
+		cout << "hi" << endl;
+		//return;
+	}
+	else
+	{
+		numberOfBits = 24;
+		numberOfChannels = 3;
+	}
+
+	writeHeader(height, width, "png", numberOfBits, 0);
 
 
-	for (int channel = 0; channel < 3; channel++)
+	for (int channel = 0; channel < numberOfChannels; channel++)
 	{
 		currentIntensity = image.at<Vec3b>(0, 0)[channel];
 		count = 0;
@@ -52,66 +76,28 @@ void runlengthEncodeRange(Mat image, int height, int width)
 		{
 			for (int columnIndex = 0; columnIndex < width; columnIndex++)
 			{
-				count++;				
+				count++;
+				
 				if (abs(image.at<Vec3b>(rowIndex, columnIndex)[channel] - currentIntensity) > TOLERANCERANGE)
 				{
-					writeToStream(count, currentIntensity);
+					writeToStream(count, currentIntensity, channels[channel]);
 					count = 0;
 					currentIntensity = image.at<Vec3b>(rowIndex, columnIndex)[channel];
 				}
 				if (count == 255)
 				{
-					writeToStream(count, currentIntensity);
+					writeToStream(count, currentIntensity, channels[channel]);
 					count = 0;
 				}
 			}
 		}
-		writeToStream(count, currentIntensity);
+		writeToStream(count, currentIntensity, channels[channel]);
+		writeChannelToFile(channels[channel]);
 	}
 }
 
-/*
-void runlengthDecodeRange(char** compressedBytes, bool isGrayscale)
-{
-	// read in width, height, file type and whether or not is grayscale 
-	// use width to count number of pixels to read.  will need a temporary column counter
-	// read in the pairs
-	int width, height;
-	string filetype;
-	bool grayscaleFlag;
-	ifstream fin;
-	int startOfImage;
-	//char count[1];
-	//char rgb[3];
-	unsigned char count;
-	unsigned char rgb[3];
+//http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
 
-	int pixelCount = 0;
-
-	fin.open("testimage.bin", ios::in);
-	fin >> width >> height >> filetype >> grayscaleFlag;
-	//cout << width << height << filetype << grayscaleFlag << endl;
-	startOfImage = fin.tellg() + 1;
-	fin.close();
-	fin.open("testimage.bin", ios::in | ios::binary);
-	fin.seekg(0, fin.end);
-	int fileLength = fin.tellg();
-	//fin.seekg(0, fin.beg);
-	fin.seekg(startOfImage, fin.beg);
-	//cout << "file length: " << fileLength << endl;
-	while (fin >> count >> rgb[0] >> rgb[1] >> rgb[2])
-	{
-		cout << (int)count << " " << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << endl; 
-		//fin.read(count, 1);
-		//fin.read(rgb, 3);
-		pixelCount++;
-		//cout << count << " " << pixelCount << endl;
-	}
-	fin.close();
-
-	//http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
-}
-*/
 
 void runlengthDecodeRange()
 {
@@ -139,15 +125,29 @@ void runlengthDecodeRange()
 	fin.read(filetype, 3);
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
+
+	int numberOfChannels;
+	Mat newImage;
 	//cout << width << " " << height << " " << filetype << " " << bits << " " << lossless << endl;
 
+	if (bits == 24)
+	{
+		newImage = Mat(height, width, CV_8UC3);
+		numberOfChannels = 3;		
+	}
+	else if (bits == 8)
+	{
+		newImage = Mat(height, width, CV_8UC1);
+		numberOfChannels = 1;
+	}
+
 	pixelsInImage = width * height;
-	Mat newImage(height, width, CV_8UC3);
+
 	
 	int tempRows, tempCols, tempCount;
 
 	
-	for (int channel = 0; channel < 3; channel++)
+	for (int channel = 0; channel < numberOfChannels; channel++)
 	{
 		tempCols = 0;
 		tempRows = 0;
@@ -181,7 +181,7 @@ void runlengthDecodeRange()
 	}
 
 	fin.close();
-	namedWindow("Why so Serious?", WINDOW_AUTOSIZE);
-	imshow("Why so Serious?", newImage);
+	namedWindow("Lossy", WINDOW_AUTOSIZE);
+	imshow("Lossy", newImage);
 	waitKey(0);
 }
