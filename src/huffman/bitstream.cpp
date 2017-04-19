@@ -2,11 +2,13 @@
 
 /***********************************/
 
+// Default Constructor
 bitstream::bitstream() :
 in_bit(7), // Start with the most significant bit
 out_bit(7), // Start with the most significant bit
 out_buffer((unsigned char)0), // Start the buffer with all 0 bits
-in_buffer((unsigned char)0) // Start the buffer with all 0 bits
+in_buffer((unsigned char)0), // Start the buffer with all 0 bits
+bytes_written(0) // Start with 0 bytes written
 {}
 
 // Empty Destructor
@@ -14,6 +16,20 @@ bitstream::~bitstream(){}
 
 /***********************************/
 
+// Wrapper for the stream.write
+// Tallies the number of bytes written to the stream
+// Does NOT use the bitstream's buffer, so that buffer
+// should be flushed beforehand
+ostream& bitstream::write( const char* s, streamsize n )
+{
+    // Add to total number of bytes written
+    bytes_written += (int)n;
+    return stream.write( s, n );
+}
+
+// Writes a single bit to the bitstream's buffer
+// When a full byte has been written to the buffer, the bytes
+// is written to the underlying stream
 bool bitstream::write_bit( int bit )
 {
     if( !stream )
@@ -29,6 +45,7 @@ bool bitstream::write_bit( int bit )
     if( out_bit < 0 )
     {
         out_bit = 7; // Reset the current bit
+        bytes_written += 1; // Increment number of bytes written
         // Write the buffer
         stream.write( (char *) &out_buffer, sizeof(char) );
         out_buffer = (unsigned char)0; // Reset the buffer
@@ -37,6 +54,9 @@ bool bitstream::write_bit( int bit )
     return true;
 }
 
+// Reads a single bit from the bitsream's buffer
+// If the buffer is empty, it reads a byte from the
+// underlying stream to the buffer
 bool bitstream::read_bit( int &bit )
 {
     if( !stream )
@@ -62,6 +82,8 @@ bool bitstream::read_bit( int &bit )
     return true;
 }
 
+// Writes a full byte to the bitstream's underlying stream through
+// the buffer, allowing the byte to be written unaligned to a byte boundary
 bool bitstream::write_byte( unsigned char c )
 {
     if( !stream )
@@ -74,6 +96,8 @@ bool bitstream::write_byte( unsigned char c )
     return true;
 }
 
+// Reads the next 8 bits from the bitstream's underlying stream as a byte,
+// allowing the reading of bytes unaligned to byte boundaries
 bool bitstream::read_byte( unsigned char &c )
 {
     int bit;
@@ -90,6 +114,9 @@ bool bitstream::read_byte( unsigned char &c )
     return true;
 }
 
+// Writes the the bitstream's bit buffer to the
+// underlying stream, even though the buffer isn't full
+// Useful for when you need to be aligned to a byte boundary
 bool bitstream::flush_bits()
 {
     if( !stream )
@@ -100,6 +127,7 @@ bool bitstream::flush_bits()
     {
         // Write the buffer as-is to the file
         stream.write( (char *) &out_buffer, sizeof(char) );
+        bytes_written += 1; // Increment number of bytes written
         
         out_bit = 7; // Reset the current bit
         out_buffer = (unsigned char)0; // Reset the buffer

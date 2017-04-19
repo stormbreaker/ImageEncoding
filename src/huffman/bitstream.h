@@ -18,8 +18,12 @@ class bitstream
     
     fstream stream;
     
+    int bytes_written;
+    
     bitstream();
     ~bitstream();
+    
+    ostream& write( const char* s, streamsize n );
     
     bool write_bit( int bit );
     bool read_bit( int &bit );
