@@ -2,6 +2,8 @@
 
 const int channels = 3; // Number of channels in a pixel
 
+// The driving function for the Huffman encoding algorithm for an image
+// The img image is encoded into the outfile
 void huffman_encode( Mat img, string outfile )
 {
     int hist[256] = {0}; // Image histogram
@@ -36,8 +38,6 @@ void huffman_encode( Mat img, string outfile )
     root = huffman_tree( hist, 256 ); // Create the Huffman tree
     cascade_bitstring( root ); // Computes the bitstrings for the leaves
     get_leaves( leaves, root ); // Extracts a list of the leaves
-    // Sorts the leaves by the symbol they represent
-    //sort( leaves, leaves + 256, huffnode::node_sort_val );
     
     // Calculate and display average bits per compressed symbol
     cout << "Average Bits per Value: " << avg_bits_compressed( leaves, height, width ) << endl;
@@ -72,6 +72,8 @@ void huffman_encode( Mat img, string outfile )
     return;
 }
 
+// The driving function for the Huffman decoding algorithm for an image
+// The infile is decoded into the img Mat object
 void huffman_decode( Mat &img, string infile )
 {
     //int hist[256] = {0};  // Image histogram
@@ -106,8 +108,6 @@ void huffman_decode( Mat &img, string infile )
     
     cascade_bitstring( root ); // Computes the bitstrings for the leaves
     get_leaves( leaves, root ); // Extracts a list of the leaves
-    // Sorts the leaves by the symbol they represent
-    //sort( leaves, leaves + 256, huffnode::node_sort_val );
     
     // Loop through img, decoding its values from file
     for( int i = 0; i < height; i++ )
@@ -125,6 +125,9 @@ void huffman_decode( Mat &img, string infile )
 
 /********************************************************************/
 
+// Given a bitstream and the root of a Huffman tree, traverses the
+// tree according to bits read from the stream until a leaf is found
+// Returns the symbol of the leaf found this way
 unsigned char read_next_huff( bitstream &bin, huffnode* root )
 {
     int bit;
@@ -146,6 +149,7 @@ unsigned char read_next_huff( bitstream &bin, huffnode* root )
 
 /***************************************************************/
 
+// Writes the given histogram to the given bitstream
 void write_hist( bitstream &bout, int* hist, int size )
 {
     // Store the data from the hist int array to file
@@ -154,6 +158,7 @@ void write_hist( bitstream &bout, int* hist, int size )
     return;
 }
 
+// Reads a histogram in from the given bitstream
 void read_hist( bitstream &bout, int* hist, int size )
 {
     // Read in the data for the hist int array from file
@@ -162,6 +167,7 @@ void read_hist( bitstream &bout, int* hist, int size )
     return;
 }
 
+// Writes the structure of the given Huffman tree to the given bitstream
 void write_hufftree( bitstream &bout, huffnode* root )
 {
     // Store a bit to tell if the current root node is a leaf
@@ -184,6 +190,7 @@ void write_hufftree( bitstream &bout, huffnode* root )
     return;
 }
 
+// Reads a Huffman tree in from the given bitstream
 void read_hufftree( bitstream &bin, huffnode* &root )
 {
     int bit;
@@ -273,6 +280,7 @@ huffnode* huffman_tree( int* hist, int size )
     return huff_list[0];
 }
 
+// Recursively assignes a bitstring to each node in a Huffman tree, given the tree's root
 void cascade_bitstring( huffnode* root )
 {
     if( root->left != nullptr )
@@ -293,6 +301,9 @@ void cascade_bitstring( huffnode* root )
     return;
 }
 
+// Populates the given array of leaves with pointers to the leaf
+// nodes of the given Huffman tree, given the tree's root
+// The index of the leaves array will match the symbol of the leaf
 void get_leaves( huffnode* leaves[256], huffnode* root )
 {
     if( root == nullptr )
