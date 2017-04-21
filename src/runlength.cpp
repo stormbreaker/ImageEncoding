@@ -98,6 +98,170 @@ void runlengthEncodeRange(Mat image, int height, int width)
 
 //http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
 
+void runlengthEncodeBitPlane(Mat image, int height, int width)
+{
+	unsigned char currentIntensity = 0;
+
+	unsigned char mask = 1;
+
+	unsigned char count;
+	int numberOfChannels;
+	int numberOfBits;
+	unsigned char currentPlaneValue = 0;
+
+	vector<vector<unsigned char>> channels[3];
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 8; j++)
+		{
+			vector<unsigned char> temp;
+			channels[i].push_back(temp);
+		}
+	}
+
+	if (image.type() == CV_8UC1)
+	{
+		numberOfChannels = 1;
+		numberOfBits = 8;
+		cout << "bitplane hi" << endl;
+	}
+	else
+	{
+		numberOfBits = 24;
+		numberOfChannels = 3;
+	}
+
+	writeHeader(height, width, "png", numberOfBits, 1);
+
+	int sum = 0;
+
+	for (int channel = 0; channel < numberOfChannels; channel++)
+	{
+		mask = 1;
+		for (int currentPlane = 0; currentPlane < 8; currentPlane++)
+		{
+			count = 0;
+			currentIntensity = image.at<Vec3b>(0, 0)[channel];
+			currentPlaneValue = currentIntensity & mask;
+			for (int rowIndex = 0; rowIndex < height; rowIndex++)
+			{
+				for (int columnIndex = 0; columnIndex < width; columnIndex++)
+				{
+					count++;
+					if (currentPlaneValue != (image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask))
+					{
+						writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						sum += count;
+						count = 0;
+						currentPlaneValue = image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask;
+						//cout << (int)currentPlaneValue << endl;
+					}
+				
+					if (count == 255)
+					{
+						//cout << (int)currentPlaneValue << " on plane " << currentPlane << endl;
+						writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						sum += count;
+						count = 0;
+					}
+
+				}
+			}
+	
+			mask = mask << 1;
+			writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+			sum += count;
+			writeChannelToFile(channels[channel][currentPlane]);
+		}
+	}
+	cout << sum << endl;
+}
+
+void runlengthDecodeBitPlane()
+{
+	int width, height;
+	int pixelsInImage;
+	char filetype[3];
+	int bits;
+	char lossless;
+
+	ifstream fin;
+	int pixelCount = 0;
+
+	unsigned char count;
+	unsigned char pixelValue;
+
+	fin.open("testimage.bin", ios::in | ios::binary);
+
+	fin.seekg(0, fin.end);
+	int fileLength = fin.tellg();
+	fin.seekg(0, fin.beg);
+
+	fin.read((char*) &height, 4);
+	fin.read((char*) &width, 4);
+	fin.read(filetype, 3);
+	fin.read((char*)&bits, 4);
+	fin.read((char*)&lossless, 1);
+
+	int numberOfChannels;
+	Mat newImage;
+
+	if (bits == 24)
+	{
+		newImage = Mat(height, width, CV_8UC3, cvScalar(0));
+		numberOfChannels = 3;
+	}
+	else if (bits == 8)
+	{
+		newImage = Mat(height, width, CV_8UC1);
+		numberOfChannels = 1;
+	}
+
+	pixelsInImage = width * height;
+
+	int tempRows, tempCols, tempCount;
+
+	unsigned char mask = 1;
+
+	for (int channel = 0; channel < numberOfChannels; channel++)
+	{
+		int sum = 0;
+		mask = 1;
+		for (int bitPlane = 0; bitPlane < 8; bitPlane++)
+		{
+			tempCols = 0;
+			tempRows = 0;
+			while (pixelCount < pixelsInImage)
+			{
+				fin.read((char*) &count, 1);
+				fin.read((char*) &pixelValue, 1);
+
+				tempCount = 0;
+				sum += count;
+				for (tempCount = 0; tempCount < count; tempCount++)
+				{
+					Vec3b temp = newImage.at<Vec3b>(tempRows, tempCols);
+					temp[channel] = pixelValue | temp[channel];
+					newImage.at<Vec3b>(tempRows, tempCols) = temp;
+					tempCols++;
+					if (tempCols == width)
+					{
+						tempCols = 0;
+						tempRows++;
+					}
+				}
+				pixelCount += count;
+				mask = mask << 1;
+			}
+			pixelCount = 0;
+		}
+	}
+
+	fin.close();
+	namedWindow("Lossy", WINDOW_AUTOSIZE);
+	imshow("Lossy", newImage);
+	waitKey(0);
+}
 
 void runlengthDecodeRange()
 {
@@ -125,6 +289,7 @@ void runlengthDecodeRange()
 	fin.read(filetype, 3);
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
+
 
 	int numberOfChannels;
 	Mat newImage;

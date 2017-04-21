@@ -13,7 +13,13 @@ using namespace cv;
 typedef unsigned char uchar;
 
 void runlengthEncodeRange(Mat image, int height, int width);
+
+void runlengthEncodeBitPlane(Mat image, int height, int width);
+
 void runlengthDecodeRange();
+void runlengthDecodeBitPlane();
+
+
 void writeHeader(int height, int width, char* filetype, int bits, char lossless);
 void writeToStream(unsigned char count, unsigned char* rgbValues);
 void writeChannelToFile(vector<unsigned char> channel);
