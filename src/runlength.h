@@ -12,16 +12,17 @@ using namespace cv;
 
 typedef unsigned char uchar;
 
-void runlengthEncodeRange(Mat image, int height, int width);
+const int TOLERANCERANGE = 32; // this is a decent change across all three channels
 
-void runlengthEncodeBitPlane(Mat image, int height, int width);
+void runlengthEncodeRange(Mat image, int height, int width, string file);
+void runlengthEncodeBitPlane(Mat image, int height, int width, string file);
 
-Mat runlengthDecodeRange();
-Mat runlengthDecodeBitPlane();
+Mat runlengthDecodeBitPlane(string filePath);
+Mat runlengthDecodeRange(string filePath);
 
 
-void writeHeader(int height, int width, char* filetype, int bits, char lossless);
+void writeHeader(int height, int width, char* filetype, int bits, char lossless, string file);
 void writeToStream(unsigned char count, unsigned char* rgbValues);
-void writeChannelToFile(vector<unsigned char> channel);
+void writeChannelToFile(vector<unsigned char> channel, string file);
 
 #endif

@@ -1,8 +1,5 @@
 #include "runlength.h"
 
-
-const int TOLERANCERANGE = 128; // this is a decent change across all three channels
-
 enum colors {BLUE, GREEN, RED};
 
 unsigned char** compressedImage = NULL;
@@ -11,8 +8,7 @@ void writeToStream(unsigned char count, unsigned char rgbValues, vector<unsigned
 {
 	channel.push_back(count);
 	channel.push_back(rgbValues);
-	cout << (int) count << " " << (int) rgbValues << endl;
-	//cout << channel.size() << endl;
+	return;
 }
 
 void writeToStreamWithoutIntensity(unsigned char count, vector<unsigned char>& channel)
@@ -20,35 +16,36 @@ void writeToStreamWithoutIntensity(unsigned char count, vector<unsigned char>& c
 	channel.push_back(count);
 }
 
-void writeChannelToFile(vector<unsigned char> channel)
+void writeChannelToFile(vector<unsigned char> channel, string file)
 {
 	ofstream fout;
 	unsigned char* channelArray = &channel[0];
 
-	fout.open("testimage.bin", ios::out | ios::binary | ios::app);
-	//cout << "in write to file" << channel.size() << endl;
+	fout.open(file, ios::out | ios::binary | ios::app);
 	fout.write((char*) channelArray, channel.size());
 	fout.close();
 }
 
-void writeHeader(int height, int width, char* filetype, int bits, char lossless)
+void writeHeader(int height, int width, char* filetype, int bits, char lossless, string file)
 {
 	// this function should essentially write all of the information necessary for the decoder
 	// to operate.  This include the width, height, type of file
 	ofstream fout;
 
-	fout.open("testimage.bin", ios::out | ios::binary);
+	fout.open(file, ios::out | ios::binary);
+
 	fout.write((char*)&height, 4);
 	fout.write((char*)&width, 4);
 	fout.write(filetype, 3);
 	fout.write((char*)&bits, 4);
 	fout.write((char*)&lossless, 1);
-	cout << "wrote " << (int)height << " " << (int)width << " " << (int)bits << " " << (int) lossless << endl;;
+
 	fout.close();
 }
 
-void runlengthEncodeRange(Mat image, int height, int width)
+void runlengthEncodeRange(Mat image, int height, int width, string file)
 {
+	string writeFile = file + ".rler";
 	unsigned char currentIntensity = 0;
 
 	unsigned char count;
@@ -62,8 +59,6 @@ void runlengthEncodeRange(Mat image, int height, int width)
 	{
 		numberOfChannels = 1;
 		numberOfBits = 8;
-		cout << "hi" << endl;
-		//return;
 	}
 	else
 	{
@@ -71,11 +66,7 @@ void runlengthEncodeRange(Mat image, int height, int width)
 		numberOfChannels = 3;
 	}
 
-//	namedWindow("Lossy", WINDOW_AUTOSIZE);
-	//imshow("Lossy", image);
-	//waitKey(0);
-
-	writeHeader(height, width, "png", numberOfBits, 0);
+	writeHeader(height, width, "png", numberOfBits, 0, writeFile);
 
 
 	for (int channel = 0; channel < numberOfChannels; channel++)
@@ -105,7 +96,7 @@ void runlengthEncodeRange(Mat image, int height, int width)
 			}
 		}
 		writeToStream(count, currentIntensity, channels[channel]);
-		writeChannelToFile(channels[channel]);
+		writeChannelToFile(channels[channel], writeFile);
 	}
 }
 
@@ -116,8 +107,9 @@ void newEncodeRunlength(Mat image, int height, int width)
 
 //http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
 
-void runlengthEncodeBitPlane(Mat image, int height, int width)
+void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 {
+	string writeFile = file + ".rleb";
 	unsigned char currentIntensity = 0;
 
 	unsigned char mask = 1;
@@ -148,7 +140,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 		numberOfChannels = 3;
 	}
 
-	writeHeader(height, width, "png", numberOfBits, 1);
+	writeHeader(height, width, "png", numberOfBits, 1, writeFile);
 
 	int sum = 0;
 
@@ -190,14 +182,15 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 			//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
 			writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 			sum += count;
-			writeChannelToFile(channels[channel][currentPlane]);
+			writeChannelToFile(channels[channel][currentPlane], writeFile);
 		}
 	}
 	//cout << sum << endl;
 }
 
-Mat runlengthDecodeBitPlane()
+Mat runlengthDecodeBitPlane(string filePath)
 {
+	string writeFile = filePath + ".png";
 	int width, height;
 	int pixelsInImage;
 	char filetype[3];
@@ -210,7 +203,7 @@ Mat runlengthDecodeBitPlane()
 	unsigned char count;
 	unsigned char pixelValue;
 
-	fin.open("testimage.bin", ios::in | ios::binary);
+	fin.open(filePath, ios::in | ios::binary);
 
 	fin.seekg(0, fin.end);
 	int fileLength = fin.tellg();
@@ -289,36 +282,23 @@ Mat runlengthDecodeBitPlane()
 						tempRows++;
 					}
 				}
-				/*
-				if (count == 0)
-				{
-					tempCols++;
-					if (tempCols == width)
-					{
-						tempCols = 0;
-						tempRows++;
-					}
-				}*/
 				pixelCount += count;
 				isSet = !isSet;
-				//cout << pixelCount << endl;
 			}
 			mask = mask << 1;
-			//cout << "pix " << pixelCount << endl;
 			pixelCount = 0;
 		}
 	}
 
 	fin.close();
-	namedWindow("Lossy", WINDOW_AUTOSIZE);
-	imshow("Lossy", newImage);
-	waitKey(0);	
-	//imwrite("/home/student/7285523/csc442final/decoded.png", newImage);
+
+	imwrite(writeFile, newImage);
 	return newImage;
 }
 
-Mat runlengthDecodeRange()
+Mat runlengthDecodeRange(string filePath)
 {
+	string writeFile = filePath + ".png";
 	int width, height;
 	int pixelsInImage;
 	char filetype[3];
@@ -332,7 +312,7 @@ Mat runlengthDecodeRange()
 	unsigned char count;
 	unsigned char pixelValue;
 
-	fin.open("testimage.bin", ios::in | ios::binary);
+	fin.open(filePath, ios::in | ios::binary);
 
 	fin.seekg(0, fin.end);
 	int fileLength = fin.tellg();
@@ -347,7 +327,6 @@ Mat runlengthDecodeRange()
 
 	int numberOfChannels;
 	Mat newImage;
-	//cout << width << " " << height << " " << filetype << " " << bits << " " << lossless << endl;
 
 	if (bits == 24)
 	{
@@ -376,10 +355,6 @@ Mat runlengthDecodeRange()
 			fin.read((char*)&count, 1);
 			fin.read((char*)&pixelValue, 1);
 
-			cout << "decode " << (int) pixelValue << endl;
-
-			//cout << (int) count << endl;
-			
 			tempCount = 0;
 			sum += count;
 			while(tempCount < count)
@@ -397,17 +372,11 @@ Mat runlengthDecodeRange()
 			}
 			pixelCount += count;
 		}
-		cout << pixelCount << endl;
 		pixelCount = 0;
-		//cout << "total " << sum << " " << pixelsInImage << endl;
 	}
 
 	fin.close();
-	/*
-	namedWindow("Lossy", WINDOW_AUTOSIZE);
-	imshow("Lossy", newImage);
-	waitKey(0);
-	*/
-	imwrite("/home/student/7285523/csc442final/decodedtest.png", newImage);
+
+	imwrite(writeFile, newImage);
 	return newImage;
 }

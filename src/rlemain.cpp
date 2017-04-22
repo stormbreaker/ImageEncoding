@@ -1,4 +1,5 @@
 #include "runlength.h"
+#include "statistics.h"
 #include <cmath>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -23,45 +24,47 @@ bool imageTypeCheck(Mat image)
 	return grayscale;
 }
 
-double rootMeanSquare(Mat image1, Mat image2)
+int main(int argc, char** argv)
 {
 
-	double sum = 0;
-	double average;
-	int numberOfPixels = image1.rows * image1.cols;
+	string imagePath;
+	string encodeFlag;
+	string typeFlag;
 
-	if (image1.rows != image2.rows || image1.cols != image2.cols)
+	if (argc != 4)
 	{
-		return -1;
+		cout << "Usage: rle <flag [-e|-d]> <encode type [-r|-b]> <file path>" << endl;
+		return 0;
 	}
-	for (int i = 0; i < image1.rows; i++)
+	encodeFlag = argv[1];
+	typeFlag = argv[2];
+	imagePath = argv[3];
+
+	Mat image = imread(imagePath, CV_LOAD_IMAGE_COLOR);
+	Mat decodedImage;
+
+	if (encodeFlag == "-e")
 	{
-		for (int j = 0; j < image1.cols; j++)
+		if (typeFlag == "-r")
 		{
-			double intensity1 = .299 * image1.at<Vec3b>(i, j)[2] + .587 * image1.at<Vec3b>(i, j)[1] + .114 * image1.at<Vec3b>(i, j)[0];
-			double intensity2 = .299 * image2.at<Vec3b>(i, j)[2] + .587 * image2.at<Vec3b>(i, j)[1] + .114 * image2.at<Vec3b>(i, j)[0];
-			sum += pow(intensity1 - intensity2, 2);
+			runlengthEncodeRange(image, image.rows, image.cols, imagePath);
+		}
+		else if (typeFlag == "-b")
+		{
+			runlengthEncodeBitPlane(image, image.rows, image.cols, imagePath);
 		}
 	}
-	average = sum/numberOfPixels;
-	return sqrt(average);	
-}
-
-int main()
-{
-	Mat image = imread("/home/student/7285523/csc442final/images/binary.png", CV_LOAD_IMAGE_COLOR);
-	Mat decodedImage;// = imread("/home/student/7285523/csc442final/images/bin_test.ppm");	
-
-	//runlengthEncodeRange(image, image.rows, image.cols);
-	//decodedImage = runlengthDecodeRange();
-
-
-	runlengthEncodeBitPlane(image, image.rows, image.cols);
-	decodedImage = runlengthDecodeBitPlane();
-
-	//decodedImage = imread("/home/student/7285523/csc442final/decoded.png", CV_LOAD_IMAGE_COLOR);
-
-	cout << rootMeanSquare(image, decodedImage) << endl;
+	else if (encodeFlag == "-d")
+	{
+		if (typeFlag == "-r")
+		{
+			runlengthDecodeRange(imagePath);
+		}
+		else if (typeFlag == "-b")
+		{
+			runlengthDecodeBitPlane(imagePath);
+		}
+	}
 
 	return 0;
 }
