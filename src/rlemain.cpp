@@ -1,4 +1,6 @@
 #include "runlength.h"
+#include "statistics.h"
+#include <cmath>
 #include <opencv2/highgui/highgui.hpp>
 
 bool imageTypeCheck(Mat image)
@@ -22,16 +24,47 @@ bool imageTypeCheck(Mat image)
 	return grayscale;
 }
 
-int main()
+int main(int argc, char** argv)
 {
-	Mat image = imread("/home/student/7285523/csc442final/images/binary.png", CV_LOAD_IMAGE_COLOR);
-	
-	//runlengthEncodeRange(image, image.rows, image.cols);
-	//runlengthDecodeRange();
-	
-	runlengthEncodeBitPlane(image, image.rows, image.cols);
-	runlengthDecodeBitPlane();
 
+	string imagePath;
+	string encodeFlag;
+	string typeFlag;
+
+	if (argc != 4)
+	{
+		cout << "Usage: rle <flag [-e|-d]> <encode type [-r|-b]> <file path>" << endl;
+		return 0;
+	}
+	encodeFlag = argv[1];
+	typeFlag = argv[2];
+	imagePath = argv[3];
+
+	Mat image = imread(imagePath, CV_LOAD_IMAGE_COLOR);
+	Mat decodedImage;
+
+	if (encodeFlag == "-e")
+	{
+		if (typeFlag == "-r")
+		{
+			runlengthEncodeRange(image, image.rows, image.cols, imagePath);
+		}
+		else if (typeFlag == "-b")
+		{
+			runlengthEncodeBitPlane(image, image.rows, image.cols, imagePath);
+		}
+	}
+	else if (encodeFlag == "-d")
+	{
+		if (typeFlag == "-r")
+		{
+			runlengthDecodeRange(imagePath);
+		}
+		else if (typeFlag == "-b")
+		{
+			runlengthDecodeBitPlane(imagePath);
+		}
+	}
 
 	return 0;
 }
