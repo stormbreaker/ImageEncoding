@@ -50,7 +50,7 @@ double rootMeanSquare(Mat image1, Mat image2)
 int main()
 {
 	Mat image = imread("/home/student/7285523/csc442final/images/binary.png", CV_LOAD_IMAGE_COLOR);
-	Mat decodedImage;	
+	Mat decodedImage;// = imread("/home/student/7285523/csc442final/images/bin_test.ppm");	
 
 	//runlengthEncodeRange(image, image.rows, image.cols);
 	//decodedImage = runlengthDecodeRange();

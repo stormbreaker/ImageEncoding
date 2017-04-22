@@ -1,7 +1,7 @@
 #include "runlength.h"
 
 
-const int TOLERANCERANGE = 4; // this is a decent change across all three channels
+const int TOLERANCERANGE = 128; // this is a decent change across all three channels
 
 enum colors {BLUE, GREEN, RED};
 
@@ -11,6 +11,7 @@ void writeToStream(unsigned char count, unsigned char rgbValues, vector<unsigned
 {
 	channel.push_back(count);
 	channel.push_back(rgbValues);
+	cout << (int) count << " " << (int) rgbValues << endl;
 	//cout << channel.size() << endl;
 }
 
@@ -42,7 +43,7 @@ void writeHeader(int height, int width, char* filetype, int bits, char lossless)
 	fout.write(filetype, 3);
 	fout.write((char*)&bits, 4);
 	fout.write((char*)&lossless, 1);
-	cout << "wrote\n";
+	cout << "wrote " << (int)height << " " << (int)width << " " << (int)bits << " " << (int) lossless << endl;;
 	fout.close();
 }
 
@@ -70,18 +71,24 @@ void runlengthEncodeRange(Mat image, int height, int width)
 		numberOfChannels = 3;
 	}
 
+//	namedWindow("Lossy", WINDOW_AUTOSIZE);
+	//imshow("Lossy", image);
+	//waitKey(0);
+
 	writeHeader(height, width, "png", numberOfBits, 0);
 
 
 	for (int channel = 0; channel < numberOfChannels; channel++)
 	{
 		currentIntensity = image.at<Vec3b>(0, 0)[channel];
+
 		count = 0;
 		for (int rowIndex = 0; rowIndex < height; rowIndex++)
 		{
 			for (int columnIndex = 0; columnIndex < width; columnIndex++)
 			{
-				count++;
+				//cout << (int)currentIntensity << endl;
+
 				
 				if (abs(image.at<Vec3b>(rowIndex, columnIndex)[channel] - currentIntensity) > TOLERANCERANGE)
 				{
@@ -94,11 +101,17 @@ void runlengthEncodeRange(Mat image, int height, int width)
 					writeToStream(count, currentIntensity, channels[channel]);
 					count = 0;
 				}
+				count++;
 			}
 		}
 		writeToStream(count, currentIntensity, channels[channel]);
 		writeChannelToFile(channels[channel]);
 	}
+}
+
+void newEncodeRunlength(Mat image, int height, int width)
+{
+	
 }
 
 //http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
@@ -128,7 +141,6 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 	{
 		numberOfChannels = 1;
 		numberOfBits = 8;
-		cout << "bitplane hi" << endl;
 	}
 	else
 	{
@@ -153,7 +165,6 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 			{
 				for (int columnIndex = 0; columnIndex < width; columnIndex++)
 				{
-					count++;
 					if (currentPlaneValue != (image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask))
 					{
 						//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
@@ -171,7 +182,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 						sum += count;
 						count = 0;
 					}
-
+					count++;
 				}
 			}
 	
@@ -182,10 +193,10 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 			writeChannelToFile(channels[channel][currentPlane]);
 		}
 	}
-	cout << sum << endl;
+	//cout << sum << endl;
 }
 
-void runlengthDecodeBitPlane()
+Mat runlengthDecodeBitPlane()
 {
 	int width, height;
 	int pixelsInImage;
@@ -244,16 +255,16 @@ void runlengthDecodeBitPlane()
 			fin.read((char*) &startingVal, 1);
 			if (startingVal != 0)
 			{
-				isSet = false;
+				isSet = true;
 			}
 			else
 			{
-				isSet = true;
+				isSet = false;
 			}
 			while (pixelCount < pixelsInImage)
 			{
 				fin.read((char*) &count, 1);
-				isSet = !isSet;
+
 				//fin.read((char*) &pixelValue, 1);
 
 				tempCount = 0;
@@ -289,10 +300,11 @@ void runlengthDecodeBitPlane()
 					}
 				}*/
 				pixelCount += count;
+				isSet = !isSet;
 				//cout << pixelCount << endl;
 			}
 			mask = mask << 1;
-			cout << "pix " << pixelCount << endl;
+			//cout << "pix " << pixelCount << endl;
 			pixelCount = 0;
 		}
 	}
@@ -300,10 +312,12 @@ void runlengthDecodeBitPlane()
 	fin.close();
 	namedWindow("Lossy", WINDOW_AUTOSIZE);
 	imshow("Lossy", newImage);
-	waitKey(0);
+	waitKey(0);	
+	//imwrite("/home/student/7285523/csc442final/decoded.png", newImage);
+	return newImage;
 }
 
-void runlengthDecodeRange()
+Mat runlengthDecodeRange()
 {
 	int width, height;
 	int pixelsInImage;
@@ -362,6 +376,8 @@ void runlengthDecodeRange()
 			fin.read((char*)&count, 1);
 			fin.read((char*)&pixelValue, 1);
 
+			cout << "decode " << (int) pixelValue << endl;
+
 			//cout << (int) count << endl;
 			
 			tempCount = 0;
@@ -381,12 +397,17 @@ void runlengthDecodeRange()
 			}
 			pixelCount += count;
 		}
+		cout << pixelCount << endl;
 		pixelCount = 0;
 		//cout << "total " << sum << " " << pixelsInImage << endl;
 	}
 
 	fin.close();
+	/*
 	namedWindow("Lossy", WINDOW_AUTOSIZE);
 	imshow("Lossy", newImage);
 	waitKey(0);
+	*/
+	imwrite("/home/student/7285523/csc442final/decodedtest.png", newImage);
+	return newImage;
 }

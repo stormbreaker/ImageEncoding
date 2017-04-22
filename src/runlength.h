@@ -16,8 +16,8 @@ void runlengthEncodeRange(Mat image, int height, int width);
 
 void runlengthEncodeBitPlane(Mat image, int height, int width);
 
-void runlengthDecodeRange();
-void runlengthDecodeBitPlane();
+Mat runlengthDecodeRange();
+Mat runlengthDecodeBitPlane();
 
 
 void writeHeader(int height, int width, char* filetype, int bits, char lossless);
