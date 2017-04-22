@@ -165,7 +165,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 						count = 0;
 						currentPlaneValue = image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask;
 					}
-				
+					
 					if (count == 255)
 					{
 						//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);

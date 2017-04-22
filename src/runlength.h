@@ -12,7 +12,7 @@ using namespace cv;
 
 typedef unsigned char uchar;
 
-const int TOLERANCERANGE = 32; // this is a decent change across all three channels
+const int TOLERANCERANGE = 4; // this is a decent change across all three channels
 
 void runlengthEncodeRange(Mat image, int height, int width, string file);
 void runlengthEncodeBitPlane(Mat image, int height, int width, string file);

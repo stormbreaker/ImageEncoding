@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 	string encodeFlag;
 	string typeFlag;
 
-	if (argc != 4)
+	if (argc < 4)
 	{
 		cout << "Usage: rle <flag [-e|-d]> <encode type [-r|-b]> <file path>" << endl;
 		return 0;
@@ -39,6 +39,7 @@ int main(int argc, char** argv)
 	encodeFlag = argv[1];
 	typeFlag = argv[2];
 	imagePath = argv[3];
+
 
 	Mat image = imread(imagePath, CV_LOAD_IMAGE_COLOR);
 	Mat decodedImage;
