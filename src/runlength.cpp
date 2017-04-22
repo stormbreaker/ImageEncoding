@@ -14,6 +14,11 @@ void writeToStream(unsigned char count, unsigned char rgbValues, vector<unsigned
 	//cout << channel.size() << endl;
 }
 
+void writeToStreamWithoutIntensity(unsigned char count, vector<unsigned char>& channel)
+{
+	channel.push_back(count);
+}
+
 void writeChannelToFile(vector<unsigned char> channel)
 {
 	ofstream fout;
@@ -143,6 +148,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 			count = 0;
 			currentIntensity = image.at<Vec3b>(0, 0)[channel];
 			currentPlaneValue = currentIntensity & mask;
+			writeToStreamWithoutIntensity(currentPlaneValue, channels[channel][currentPlane]);
 			for (int rowIndex = 0; rowIndex < height; rowIndex++)
 			{
 				for (int columnIndex = 0; columnIndex < width; columnIndex++)
@@ -150,17 +156,18 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 					count++;
 					if (currentPlaneValue != (image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask))
 					{
-						writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 						sum += count;
 						count = 0;
 						currentPlaneValue = image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask;
-						//cout << (int)currentPlaneValue << endl;
 					}
 				
 					if (count == 255)
 					{
-						//cout << (int)currentPlaneValue << " on plane " << currentPlane << endl;
-						writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
+						writeToStreamWithoutIntensity(0, channels[channel][currentPlane]);
 						sum += count;
 						count = 0;
 					}
@@ -169,7 +176,8 @@ void runlengthEncodeBitPlane(Mat image, int height, int width)
 			}
 	
 			mask = mask << 1;
-			writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+			//writeToStream(count, currentPlaneValue, channels[channel][currentPlane]);
+			writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 			sum += count;
 			writeChannelToFile(channels[channel][currentPlane]);
 		}
@@ -222,6 +230,8 @@ void runlengthDecodeBitPlane()
 	int tempRows, tempCols, tempCount;
 
 	unsigned char mask = 1;
+	unsigned char startingVal;
+	bool isSet;
 
 	for (int channel = 0; channel < numberOfChannels; channel++)
 	{
@@ -231,17 +241,35 @@ void runlengthDecodeBitPlane()
 		{
 			tempCols = 0;
 			tempRows = 0;
+			fin.read((char*) &startingVal, 1);
+			if (startingVal != 0)
+			{
+				isSet = false;
+			}
+			else
+			{
+				isSet = true;
+			}
 			while (pixelCount < pixelsInImage)
 			{
 				fin.read((char*) &count, 1);
-				fin.read((char*) &pixelValue, 1);
+				isSet = !isSet;
+				//fin.read((char*) &pixelValue, 1);
 
 				tempCount = 0;
 				sum += count;
 				for (tempCount = 0; tempCount < count; tempCount++)
 				{
 					Vec3b temp = newImage.at<Vec3b>(tempRows, tempCols);
-					temp[channel] = pixelValue | temp[channel];
+					if (isSet)
+					{
+						temp[channel] = temp[channel] | mask;  //pixelValue | temp[channel];
+					}
+				// else then or with 0
+					else
+					{
+						temp[channel] = temp[channel] | 0;
+					}
 					newImage.at<Vec3b>(tempRows, tempCols) = temp;
 					tempCols++;
 					if (tempCols == width)
@@ -250,9 +278,21 @@ void runlengthDecodeBitPlane()
 						tempRows++;
 					}
 				}
+				/*
+				if (count == 0)
+				{
+					tempCols++;
+					if (tempCols == width)
+					{
+						tempCols = 0;
+						tempRows++;
+					}
+				}*/
 				pixelCount += count;
-				mask = mask << 1;
+				//cout << pixelCount << endl;
 			}
+			mask = mask << 1;
+			cout << "pix " << pixelCount << endl;
 			pixelCount = 0;
 		}
 	}

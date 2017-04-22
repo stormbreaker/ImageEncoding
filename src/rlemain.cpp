@@ -24,7 +24,7 @@ bool imageTypeCheck(Mat image)
 
 int main()
 {
-	Mat image = imread("/home/student/7285523/csc442final/images/Hummingbird.jpg", CV_LOAD_IMAGE_COLOR);
+	Mat image = imread("/home/student/7285523/csc442final/images/binary.png", CV_LOAD_IMAGE_COLOR);
 	
 	//runlengthEncodeRange(image, image.rows, image.cols);
 	//runlengthDecodeRange();
