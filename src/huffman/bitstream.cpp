@@ -1,20 +1,38 @@
+﻿/*
+                             ***** bitstream.cpp *****
+
+Contains the definitions for the Bistream class's member functions.
+
+CSC542 Digital Image Processing - Spring 2017
+
+Author: Scott Carda
+*/
+
+/******************************************************************************/
+/*                                Include Files                               */
+/******************************************************************************/
+
 #include "bitstream.h"
 
-/***********************************/
+/******************************************************************************/
+/*                    Bitstream Constructor and Destructor                    */
+/******************************************************************************/
 
 // Default Constructor
 bitstream::bitstream() :
 in_bit(7), // Start with the most significant bit
 out_bit(7), // Start with the most significant bit
-out_buffer((unsigned char)0), // Start the buffer with all 0 bits
 in_buffer((unsigned char)0), // Start the buffer with all 0 bits
+out_buffer((unsigned char)0), // Start the buffer with all 0 bits
 bytes_written(0) // Start with 0 bytes written
 {}
 
 // Empty Destructor
 bitstream::~bitstream(){}
 
-/***********************************/
+/******************************************************************************/
+/*                      Bitstream Class Member Functions                      */
+/******************************************************************************/
 
 // Wrapper for the stream.write
 // Tallies the number of bytes written to the stream
@@ -54,7 +72,7 @@ bool bitstream::write_bit( int bit )
     return true;
 }
 
-// Reads a single bit from the bitsream's buffer
+// Reads a single bit from the bitstream's buffer
 // If the buffer is empty, it reads a byte from the
 // underlying stream to the buffer
 bool bitstream::read_bit( int &bit )
@@ -114,7 +132,7 @@ bool bitstream::read_byte( unsigned char &c )
     return true;
 }
 
-// Writes the the bitstream's bit buffer to the
+// Writes the bitstream's bit buffer to the
 // underlying stream, even though the buffer isn't full
 // Useful for when you need to be aligned to a byte boundary
 bool bitstream::flush_bits()

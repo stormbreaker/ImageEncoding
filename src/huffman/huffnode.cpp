@@ -1,4 +1,22 @@
+﻿/*
+                             ***** huffnode.cpp *****
+
+Contains the definitions for the Huffnode class's member functions.
+
+CSC542 Digital Image Processing - Spring 2017
+
+Author: Scott Carda
+*/
+
+/******************************************************************************/
+/*                                Include Files                               */
+/******************************************************************************/
+
 #include "huffnode.h"
+
+/******************************************************************************/
+/*                    Huffnode Constructors and Destructors                   */
+/******************************************************************************/
 
 // Default Constructor
 huffnode::huffnode() :
@@ -31,6 +49,10 @@ huffnode::~huffnode()
     delete_children();
 }
 
+/******************************************************************************/
+/*                       Huffnode Class Member Functions                      */
+/******************************************************************************/
+
 // Recursively deallocate the children under a node
 void huffnode::delete_children()
 {
@@ -58,6 +80,10 @@ bool huffnode::is_leaf()
     // If node has no children, it is a leaf
     return left == nullptr && right == nullptr;
 }
+
+/******************************************************************************/
+/*                    Huffnode Static Comparison Functions                    */
+/******************************************************************************/
 
 // Static function for telling how to sort nodes pointers by their frequencies
 bool huffnode::node_sort_freq( huffnode* first, huffnode* second )
@@ -87,4 +113,3 @@ bool huffnode::node_sort_bit( huffnode* first, huffnode* second )
     // If equal length, compare with string.compare
     return first->bitstring.compare( second->bitstring ) > 0;
 }
-
