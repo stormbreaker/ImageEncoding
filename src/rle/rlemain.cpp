@@ -50,6 +50,7 @@ int main(int argc, char** argv)
 		else if (typeFlag == "-b")
 		{
 			runlengthEncodeBitPlane(image, image.rows, image.cols, imagePath);
+			//runlengthEncodeBitPlaneIgnore(image, image.rows, image.cols, imagePath);
 		}
 	}
 	else if (encodeFlag == "-d")
@@ -61,6 +62,7 @@ int main(int argc, char** argv)
 		else if (typeFlag == "-b")
 		{
 			runlengthDecodeBitPlane(imagePath);
+			//runlengthDecodeBitPlaneIgnore(imagePath);
 		}
 	}
 

@@ -20,7 +20,7 @@ OPENCV = `pkg-config opencv --cflags --libs`
 
 LIBS = $(OPENCV)
 
-VPATH = src:src/huffman
+VPATH = src:src/huffman:src/rle
 
 #If nothing is specified with make add the optimizer flag
 all:	CFLAGS += -g -O

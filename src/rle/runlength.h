@@ -26,9 +26,13 @@ const int TOLERANCERANGE = 16;
 void runlengthEncodeRange(Mat image, int height, int width, string file);
 void runlengthEncodeBitPlane(Mat image, int height, int width, string file);
 
+void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file);
+
+
 // decoder prototypes
 Mat runlengthDecodeBitPlane(string filePath);
 Mat runlengthDecodeRange(string filePath);
+Mat runlengthDecodeBitPlaneIgnore(string filePath);
 
 // helper function prototypes
 void writeHeader(int height, int width, char* filetype, int bits, char lossless, string file);
