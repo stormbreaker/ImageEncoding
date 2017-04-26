@@ -44,13 +44,6 @@ void prediction_1D( Mat f,Mat &f_hat )
 int main( int argc, char** argv )
 {
 
-    int aflag = 0;
-    int bflag = 0;
-    char *cvalue = NULL;
-    int index;
-    int c;
-    int alpha[2] = {1};
-    int order = 1;
 
     Mat f_hat, error, new_image;
     Mat image;
