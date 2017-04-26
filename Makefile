@@ -20,23 +20,27 @@ OPENCV = `pkg-config opencv --cflags --libs`
 
 LIBS = $(OPENCV)
 
-VPATH = src:src/huffman:src/rle
+VPATH = src:src/huffman:src/rle:src/predictive
 
 #If nothing is specified with make add the optimizer flag
 all:	CFLAGS += -g -O
 all:	CXXFLAGS += -g -O	
-all:	encode
+#all:	encode
 #If debug is specified add the debugging flag
 debug: CFLAGS += -g
 debug: CXXFLAGS += -g
 debug: all
 #-----------------------------------------------------------------------
-
+all: rle dpcm delta prev huff
 # MAKE allows the use of "wildcards", to make writing compilation instructions
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
 rle: runlength.o rlemain.o statistics.o
 	$(LINK) -o $@ $^ $(LIBS)
-dpcm: dpcm.o predictive.o image_io.o
+dpcm: dpcm.o dpcm_main.o 
+	$(LINK) -o $@ $^ $(LIBS)
+delta: delta_mod.o dm.o 
+	$(LINK) -o $@ $^ $(LIBS)
+prev: previous_pixel.o 
 	$(LINK) -o $@ $^ $(LIBS)
 encode: encode.o framework.o runlength.o predictive.o #huffman.o
 	$(LINK) -o $@ $^ $(LIBS)
