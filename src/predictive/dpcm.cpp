@@ -483,10 +483,18 @@ void dpcm_decoder( const char *fname)
         dpcm_second_dec(f, height, width, fin,q);
     else
         dpcm_first_dec( f, height, width, fin,q);
-    namedWindow( "Image", CV_WINDOW_AUTOSIZE );
-    imshow( "Image", f );
-    waitKey(0);
-    imwrite("tempa.png",f);
+    //namedWindow( "Image", CV_WINDOW_AUTOSIZE );
+    //imshow( "Image", f );
+    //waitKey(0);
+    string name(fname);
+    name.pop_back();
+    name.pop_back();
+    name.pop_back();
+    name.pop_back();
+    name += "_decoded.";
+    name += "png";
+    imwrite(name, f);
+
 }
 /************************************************************************
  *  Function:dpcm_first_dec
