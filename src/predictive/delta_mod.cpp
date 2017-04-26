@@ -97,7 +97,6 @@ void read_header(ifstream &fin, int &height, int &width, char* ext, float &delta
 void delta_modulation(Mat f, const int &height, const int &width, const float &delta, const char * fname)
 {
     unsigned char channels = 3;
-    unsigned char delta_sign;
     ofstream fout;
     double fn;
     double fhat;
@@ -194,14 +193,12 @@ void delta_decoder(const char * fname)
 {
     Mat f;
     unsigned char channels = 3;
-    unsigned char delta_sign;
     ifstream fin;
     float delta;
     unsigned char encode;
     unsigned char prev;
     unsigned char pix;
     char bit;
-    const char alpha =  1;
     int r, c;
     int height, width;
     char ext[3];

@@ -313,9 +313,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
     unsigned char xprev;
     unsigned char yprev;
     Vec3b ytmp;
-    double fn;
     double fhat;
-    double fdot;
     double en;
     double edot;
     char count = 0;
@@ -398,10 +396,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
     flag = true;
     unsigned char channels = 3;
     unsigned char code;
-    unsigned char xprev;
-    unsigned char yprev;
     Vec3b ytmp;
-    double fn;
     double fhat;
     double fdot;
     double en;
@@ -585,7 +580,6 @@ void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin,
     Vec3b xtmp;
     char count;
     unsigned char pix = 0;
-    unsigned char prev;
     char delta;
     int r, c;
     //A four level quantizer was used to encode the image
@@ -606,7 +600,6 @@ void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin,
             tmp = f.at<Vec3b>(r, 0);
             read_char(fin,pix);
             tmp[chan] = pix;
-            prev = pix;
             bit = q == 4? 3 : 7;
             f.at<Vec3b>(r,0) = tmp;
             count = 0;
@@ -682,8 +675,8 @@ double decode_4_level( char bit, char pix, char count)
     char tmp = pix & (bit << (count * 2));
     tmp = tmp >> (count*2);
     if(!flag)//if a second order encoder was used
-        return four_levels_second[tmp];
-    return four_levels[tmp];
+        return four_levels_second[(int)tmp];
+    return four_levels[(int)tmp];
 }
 /************************************************************************
  *  Function:decode_8_level
@@ -699,6 +692,6 @@ double decode_8_level( char bit, char pix, char count)
 {
     char tmp = pix & (bit << (count * 3));
     tmp = tmp >> (count*3);
-    return eight_levels[tmp];
+    return eight_levels[(int)tmp];
 }
 
