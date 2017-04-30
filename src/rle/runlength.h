@@ -20,7 +20,7 @@ using namespace cv;
 typedef unsigned char uchar;
 
 // the value to be used +/- per channel
-const int TOLERANCERANGE = 16;
+const int TOLERANCERANGE = 4;
 
 // encoder prototypes
 void runlengthEncodeRange(Mat image, int height, int width, string file);

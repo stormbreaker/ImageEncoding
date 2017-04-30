@@ -4,6 +4,7 @@
 	the runlength encoder and decoder.  
 */
 #include "runlength.h"
+#include "../statistics/statistics.h"
 
 /*
 	Author: Benjamin Kaiser
@@ -96,12 +97,14 @@ void writeHeader(int height, int width, char* filetype, int bits, char lossless,
 void runlengthEncodeRange(Mat image, int height, int width, string file)
 {
 	int extensionIndex = file.find_last_of(".");
+	string fileType = file.substr(extensionIndex + 1, 3);
 	string writeFile = file.replace(extensionIndex, 4, ".rler");// this create the file path to write to
 	unsigned char currentIntensity = 0;
 	unsigned char count;
 	int numberOfChannels;
 	char lossless;
 	int numberOfBits;
+	int bytesWritten = 0;
 
 	vector<unsigned char> channels[3];
 
@@ -119,7 +122,7 @@ void runlengthEncodeRange(Mat image, int height, int width, string file)
 	}
 
 	// create our file for encoding to
-	writeHeader(height, width, "png", numberOfBits, 0, writeFile);
+	writeHeader(height, width, (char *) fileType.c_str(), numberOfBits, 0, writeFile);
 
 	// process image by channel
 	for (int channel = 0; channel < numberOfChannels; channel++)
@@ -137,20 +140,25 @@ void runlengthEncodeRange(Mat image, int height, int width, string file)
 					writeToStream(count, currentIntensity, channels[channel]);
 					count = 0;
 					currentIntensity = image.at<Vec3b>(rowIndex, columnIndex)[channel];
+					bytesWritten += 2;
 				}
 				// since bytes have a maximum value of 255, we need to write to the stream and reset our count
 				if (count == 255)
 				{
 					writeToStream(count, currentIntensity, channels[channel]);
 					count = 0;
+					bytesWritten += 2;
 				}
 				count++;
 			}
 		}
 		writeToStream(count, currentIntensity, channels[channel]);
+		bytesWritten += 2;
 		// actually write our completed channel to the encoded file.  
 		writeChannelToFile(channels[channel], writeFile);
 	}
+
+    cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
 }
 /*
 	Author: Benjamin Kaiser
@@ -168,6 +176,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 {
 	// encoded data file path
 	int extensionIndex = file.find_last_of(".");
+	string fileType = file.substr(extensionIndex + 1, 3);
 	string writeFile = file.replace(extensionIndex, 4, ".rleb");
 	unsigned char currentIntensity = 0;
 
@@ -179,6 +188,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 	int numberOfChannels;
 	int numberOfBits;
 	unsigned char currentPlaneValue = 0;
+	int bytesWritten = 0;
 
 	vector<vector<unsigned char>> channels[3];
 
@@ -205,7 +215,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 		numberOfChannels = 3;
 	}
 
-	writeHeader(height, width, "png", numberOfBits, 1, writeFile);
+	writeHeader(height, width, (char *) fileType.c_str(), numberOfBits, 1, writeFile);
 
 	int sum = 0;
 
@@ -233,6 +243,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 						sum += count;
 						count = 0;
+						bytesWritten++;
 						currentPlaneValue = image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask;
 					}
 					// since we are storing in a byte and the byte has a 255 max value we need to keep
@@ -242,6 +253,7 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 					{
 						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 						writeToStreamWithoutIntensity(0, channels[channel][currentPlane]);
+						bytesWritten += 2;
 						sum += count;
 						count = 0;
 					}
@@ -251,10 +263,12 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 	
 			mask = mask << 1;
 			writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
+			bytesWritten++;
 			sum += count;
 			writeChannelToFile(channels[channel][currentPlane], writeFile);
 		}
 	}
+    cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
 }
 
 /*
@@ -400,6 +414,7 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 {
 	// encoded data file path
 	int extensionIndex = file.find_last_of(".");
+	string fileType = file.substr(extensionIndex + 1, 3);
 	string writeFile = file.replace(extensionIndex, 4, ".rleb");
 	unsigned char currentIntensity = 0;
 
@@ -411,6 +426,7 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 	int numberOfChannels;
 	int numberOfBits;
 	unsigned char currentPlaneValue = 0;
+	int bytesWritten = 0;
 
 	vector<vector<unsigned char>> channels[3];
 
@@ -437,7 +453,7 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 		numberOfChannels = 3;
 	}
 
-	writeHeader(height, width, "png", numberOfBits, 1, writeFile);
+	writeHeader(height, width, (char *) fileType.c_str(), numberOfBits, 1, writeFile);
 
 	int sum = 0;
 
@@ -465,6 +481,7 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 						sum += count;
 						count = 0;
+						count++;
 						currentPlaneValue = image.at<Vec3b>(rowIndex, columnIndex)[channel] & mask;
 					}
 					// since we are storing in a byte and the byte has a 255 max value we need to keep
@@ -474,6 +491,7 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 					{
 						writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
 						writeToStreamWithoutIntensity(0, channels[channel][currentPlane]);
+						bytesWritten++;
 						sum += count;
 						count = 0;
 					}
@@ -483,10 +501,12 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 	
 			mask = mask << 1;
 			writeToStreamWithoutIntensity(count, channels[channel][currentPlane]);
+			bytesWritten++;
 			sum += count;
 			writeChannelToFile(channels[channel][currentPlane], writeFile);
 		}
 	}
+    cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
 }
 
 /*
@@ -635,7 +655,7 @@ Mat runlengthDecodeRange(string filePath)
 {
 	int width, height;
 	int pixelsInImage;
-	char filetype[3];
+	char filetype[4];
 	int bits;
 	char lossless;
 
@@ -648,18 +668,23 @@ Mat runlengthDecodeRange(string filePath)
 
 	fin.open(filePath, ios::in | ios::binary);
 
-	int extensionIndex = filePath.find_last_of(".");
-	string writeFile = filePath.replace(extensionIndex, 20, "decodedrange.png"); // create decoded file path
-
 	// read in header
 	fin.read((char*)&height, 4);
 	fin.read((char*)&width, 4);
 	fin.read(filetype, 3);
+	filetype[3] = 0;
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
 
 	int numberOfChannels;
 	Mat newImage;
+
+	string fileType = filetype;
+
+	int extensionIndex = filePath.find_last_of(".");
+	Mat oldImage = imread(filePath.replace(extensionIndex, 5, "." + fileType), CV_LOAD_IMAGE_COLOR);
+
+	string writeFile = filePath.replace(extensionIndex, 20, "decodedrange.png"); // create decoded file path
 
 	// check to see what kind of image we should create
 	if (bits == 24)
@@ -716,6 +741,8 @@ Mat runlengthDecodeRange(string filePath)
 	}
 
 	fin.close();
+
+	cout << "Root Mean Square: " << rootMeanSquare(oldImage, newImage) << endl;
 
 	imwrite(writeFile, newImage);
 	return newImage;

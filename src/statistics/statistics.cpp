@@ -24,7 +24,7 @@ double rootMeanSquare(Mat image1, Mat image2)
 	// error check
 	if (image1.rows != image2.rows || image1.cols != image2.cols)
 	{
-		return -1;
+		return INT_MAX;
 	}
 
 	//process image
