@@ -480,7 +480,7 @@ void get_hist( int* hist, Mat img )
 // Prints a usage statement on how to use the program
 void usage()
 {
-    cout << "huff -[e|d] <infile> <outfile>" << endl;
+    cout << "./huff -[e|d] <infile> <outfile>" << endl;
     cout << "   -[e|d]: either -e to encode the infile, or -d to decode the infile" << endl;
     cout << "   <infile>: the file to be encoded or decoded" << endl;
     cout << "   <outfile>: the file that the resulting encoding or decoding is saved to" << endl;
