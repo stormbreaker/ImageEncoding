@@ -95,7 +95,8 @@ void writeHeader(int height, int width, char* filetype, int bits, char lossless,
 */
 void runlengthEncodeRange(Mat image, int height, int width, string file)
 {
-	string writeFile = file + ".rler"; // this create the file path to write to
+	int extensionIndex = file.find_last_of(".");
+	string writeFile = file.replace(extensionIndex, 4, ".rler");// this create the file path to write to
 	unsigned char currentIntensity = 0;
 	unsigned char count;
 	int numberOfChannels;
@@ -166,7 +167,8 @@ void runlengthEncodeRange(Mat image, int height, int width, string file)
 void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 {
 	// encoded data file path
-	string writeFile = file + ".rleb";
+	int extensionIndex = file.find_last_of(".");
+	string writeFile = file.replace(extensionIndex, 4, ".rleb");
 	unsigned char currentIntensity = 0;
 
 	// mask for encoding
@@ -266,7 +268,6 @@ void runlengthEncodeBitPlane(Mat image, int height, int width, string file)
 */
 Mat runlengthDecodeBitPlane(string filePath)
 {
-	string writeFile = filePath + ".png"; // create decoded file path
 	int width, height;
 	int pixelsInImage;
 	char filetype[3];
@@ -280,6 +281,9 @@ Mat runlengthDecodeBitPlane(string filePath)
 	unsigned char pixelValue;
 
 	fin.open(filePath, ios::in | ios::binary);
+
+	int extensionIndex = filePath.find_last_of(".");
+	string writeFile = filePath.replace(extensionIndex, 20, "decodedbitplane.png"); // create decoded file path
 
 	// read the header
 	fin.read((char*) &height, 4);
@@ -394,8 +398,9 @@ Mat runlengthDecodeBitPlane(string filePath)
 */
 void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file)
 {
-// encoded data file path
-	string writeFile = file + ".rleb";
+	// encoded data file path
+	int extensionIndex = file.find_last_of(".");
+	string writeFile = file.replace(extensionIndex, 4, ".rleb");
 	unsigned char currentIntensity = 0;
 
 	// mask for encoding
@@ -499,7 +504,6 @@ void runlengthEncodeBitPlaneIgnore(Mat image, int height, int width, string file
 */
 Mat runlengthDecodeBitPlaneIgnore(string filePath)
 {
-	string writeFile = filePath + ".png"; // create decoded file path
 	int width, height;
 	int pixelsInImage;
 	char filetype[3];
@@ -513,6 +517,9 @@ Mat runlengthDecodeBitPlaneIgnore(string filePath)
 	unsigned char pixelValue;
 
 	fin.open(filePath, ios::in | ios::binary);
+
+	int extensionIndex = filePath.find_last_of(".");
+	string writeFile = filePath.replace(extensionIndex, 20, "decodedbitplane.png"); // create decoded file path
 
 	// read the header
 	fin.read((char*) &height, 4);
@@ -626,7 +633,6 @@ Mat runlengthDecodeBitPlaneIgnore(string filePath)
 */
 Mat runlengthDecodeRange(string filePath)
 {
-	string writeFile = filePath + ".png"; // create decoded file path
 	int width, height;
 	int pixelsInImage;
 	char filetype[3];
@@ -642,6 +648,8 @@ Mat runlengthDecodeRange(string filePath)
 
 	fin.open(filePath, ios::in | ios::binary);
 
+	int extensionIndex = filePath.find_last_of(".");
+	string writeFile = filePath.replace(extensionIndex, 20, "decodedrange.png"); // create decoded file path
 
 	// read in header
 	fin.read((char*)&height, 4);
