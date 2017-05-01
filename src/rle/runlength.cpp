@@ -102,7 +102,7 @@ void runlengthEncodeRange(Mat image, int height, int width, string file)
 	unsigned char currentIntensity = 0;
 	unsigned char count;
 	int numberOfChannels;
-	char lossless;
+	//char lossless = 0;
 	int numberOfBits;
 	int bytesWritten = 0;
 
@@ -292,7 +292,7 @@ Mat runlengthDecodeBitPlane(string filePath)
 	int pixelCount = 0;
 
 	unsigned char count;
-	unsigned char pixelValue;
+	//unsigned char pixelValue;
 
 	fin.open(filePath, ios::in | ios::binary);
 
@@ -306,7 +306,7 @@ Mat runlengthDecodeBitPlane(string filePath)
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
 
-	int numberOfChannels;
+	int numberOfChannels = 3;
 	Mat newImage;
 
 	// check what type of image to create
@@ -534,7 +534,7 @@ Mat runlengthDecodeBitPlaneIgnore(string filePath)
 	int pixelCount = 0;
 
 	unsigned char count;
-	unsigned char pixelValue;
+	//unsigned char pixelValue;
 
 	fin.open(filePath, ios::in | ios::binary);
 
@@ -548,7 +548,7 @@ Mat runlengthDecodeBitPlaneIgnore(string filePath)
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
 
-	int numberOfChannels;
+	int numberOfChannels = 3;
 	Mat newImage;
 
 	// check what type of image to create
@@ -676,7 +676,7 @@ Mat runlengthDecodeRange(string filePath)
 	fin.read((char*)&bits, 4);
 	fin.read((char*)&lossless, 1);
 
-	int numberOfChannels;
+	int numberOfChannels = 3;
 	Mat newImage;
 
 	string fileType = filetype;
