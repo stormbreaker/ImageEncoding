@@ -31,16 +31,19 @@ int main( int argc, char **argv)
     in_fname = string(argv[1]);
     if( argc == 4 )
         out_fname = string(argv[3]);
-    else
-    {
-        
-    }
     delta = atof(argv[2]);
     f = imread(argv[1], CV_LOAD_IMAGE_COLOR);
     height = f.rows;
     width = f.cols;
+    cout << "Encoding Image Using: " << out_fname << endl;
+    cout << "Image was encoded using 1-bit per pixel." << endl;
     delta_modulation(f, height, width, delta, out_fname.c_str());
-    delta_decoder( out_fname.c_str());    
+    cout << endl;
+    cout << "Decoding Image" << endl;
+    Mat fnew = delta_decoder( out_fname.c_str());
+    cout << endl;
+    cout << "Root Mean Square: " << rootMeanSquare(f, fnew) << endl; 
+    cout << "Signal to Noise Ratio: " << signalToNoise(f, fnew) << endl;
 }
 
 void print_error(const int &argc)
@@ -52,7 +55,6 @@ void print_error(const int &argc)
 
     cout << "Program Usage:\n";
     cout << "./delta_mod input_fname delta output_fname\n\n";
-    cout << "output_fname not necessary default output is input_fname appended with delta_mod with bin extension.\n";
 }
 
 

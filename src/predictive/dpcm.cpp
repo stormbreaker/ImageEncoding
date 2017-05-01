@@ -3,8 +3,12 @@
 /*
  *Global Constants for the quantizer levels
  */
-const double four_levels[] = {-1.99, -.26, .24, 1.99};
-const double four_levels_second[] = {-18, -.26, .26, 18};
+const double four_levels[] = {-8, -1, 1, 8};
+const double four_bounds[] = {-4, 0, 4};
+
+const double four_levels_second[] = {-20, -2, 2, 20};
+const double four_sec_bounds[] = { -4, 0, 4};
+
 const int eight_levels[] = {-25, -15, -8, -4, 4, 8, 15, 25};
 /*
  * 
@@ -120,11 +124,11 @@ double second_predicter( const double &xprev, const double &yprev)
 
 double four_level( const double &en )
 {
-    if( en < -.5 )
+    if( en < four_bounds[0] )
         return four_levels[0];
-    else if( en < 0 )
+    else if( en <= four_bounds[1] )
         return four_levels[1];
-    else if( en < .5 )
+    else if( en <= four_bounds[2] )
         return four_levels[2];
     return four_levels[3];
 }
@@ -138,11 +142,11 @@ double four_level( const double &en )
  ************************************************************************/
 double four_level_second( const double &en )
 {
-    if( en < -3 )
+    if( en < four_sec_bounds[0] )
         return four_levels_second[0];
-    else if( en < 0 )
+    else if( en <= four_sec_bounds[1] )
         return four_levels_second[1];
-    else if( en < 3 )
+    else if( en <= four_sec_bounds[2] )
         return four_levels_second[2];
     return four_levels_second[3];
 }
@@ -308,6 +312,7 @@ void dpcm( Mat f, const int &height, const int &width, const char &p, const char
 void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, const char& levels, double (*q)(const double&) )
 {
     flag = false;
+    Mat tmp_image = Mat(f.rows,f.cols, CV_8UC3, cvScalar(0)); 
     unsigned char channels = 3;
     unsigned char code;
     unsigned char xprev;
@@ -326,6 +331,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
         {
             c = 0;
             tmp = f.at<Vec3b>(r,c);
+            tmp_image.at<Vec3b>(r,c) = tmp;
             write_char(fout, tmp[chan] );
             fhat = tmp[chan];
             code = 0; 
@@ -333,6 +339,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
             for( c = 1; c < width; c++)
             {
                 tmp = f.at<Vec3b>(r,c);
+                tmp_image.at<Vec3b>(r,c) = tmp;
                 if( r == 0)
                 {
                     //write the initial row of the image since there are no
@@ -341,14 +348,13 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
                 }
                 else
                 {
-                    xtmp = f.at<Vec3b>(r-1, c);
-                    ytmp = f.at<Vec3b>(r, c-1);
+                    xtmp = tmp_image.at<Vec3b>(r-1, c);
+                    ytmp = tmp_image.at<Vec3b>(r, c-1);
                     xprev = xtmp[chan];
                     yprev = ytmp[chan];
-                    fhat = second_predicter( xprev, yprev);
                     en = tmp[chan] - fhat;
                     edot = (*q)( en );
-                    f.at<Vec3b>(r,c)[chan] = edot+fhat;
+                    tmp_image.at<Vec3b>(r,c)[chan] = edot+fhat;
                     store_bits(code, edot, levels);
                     //if a four level quantizer is being used
                     if( levels == 4 )
@@ -371,6 +377,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
                             code = 0;
                         }
                     }
+                    fhat = second_predicter( xprev, yprev);
                 }
             }
             //if the number of bits don't fill a byte write anyway and go to
@@ -397,6 +404,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
     unsigned char channels = 3;
     unsigned char code;
     Vec3b ytmp;
+    double fn;
     double fhat;
     double fdot;
     double en;
@@ -413,19 +421,20 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
         {
             c = 0;
             tmp = f.at<Vec3b>(r,c);
-            write_char(fout, tmp[chan] );
-            fhat = tmp[chan];
+            fn = tmp[chan];
+            write_char(fout, fn );
+            fhat = fn;
             fdot = fhat;
             code = 0; 
             count = 0;
             for( c = 1; c < width; c++)
             {
                 tmp = f.at<Vec3b>(r,c);
-                fhat = first_predicter( fdot);
-                en = tmp[chan] - fhat;
+                fn = tmp[chan];
+                en =  fn-fhat;
                 edot = (*q)( en );
                 fdot = edot + fhat;
-                store_bits(code, edot, levels);
+                store_bits( code, edot, levels);
                 if( levels == 4 )
                 {
                     count+=2;
@@ -447,6 +456,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
                         code = 0;
                     }
                 }
+                fhat = first_predicter( fdot);
             }
             if( count != 0)
                 write_char( fout, code);
@@ -464,7 +474,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
  *              levels is the number of levels in the quantizer
  *              q is the function pointer the corresponding quantizer
  ************************************************************************/
-void dpcm_decoder( const char *fname)
+Mat dpcm_decoder( const char *fname)
 {
     ifstream fin;
     char ext[3] = {'P', 'N', 'G'};
@@ -489,7 +499,7 @@ void dpcm_decoder( const char *fname)
     name += "_decoded.";
     name += "png";
     imwrite(name, f);
-
+    return f;
 }
 /************************************************************************
  *  Function:dpcm_first_dec
@@ -512,7 +522,8 @@ void dpcm_first_dec( Mat f, const int &height, const int &width, ifstream &fin, 
     char count;
     unsigned char pix = 0;
     unsigned char prev;
-    char delta;
+    unsigned char code;
+    double delta;
     int r, c;
     if (q == 4)
     {
@@ -534,26 +545,36 @@ void dpcm_first_dec( Mat f, const int &height, const int &width, ifstream &fin, 
             prev = pix;
             f.at<Vec3b>(r,0) = tmp;
             count = 0;
-            read_char(fin,pix);
+            read_char(fin,code);
             for( c = 1; c < width; c++ )
             {
                 delta = 0;
                 tmp  = f.at<Vec3b>(r,c);
-                delta = get_delta(bit, shift, pix, count);
-                tmp[chan] = first_predicter(prev) + delta;  
-                prev = tmp[chan];
+                delta = get_delta(bit, shift, code, count);
+                
+                if( prev+delta > 255.0)
+                    pix = 255;
+                else if( prev+delta < 0.0 )
+                    pix = 0;
+                else
+                    pix = round(prev + delta);  
+                
+                
+                
+                tmp[chan] = pix;
                 f.at<Vec3b>(r,c) = tmp;
                 count++;
                 if( shift == 2 && count == 4 && c+1 != width)
                 {
-                    read_char(fin, pix);
+                    read_char(fin, code);
                     count = 0;
                 }
                 else if( shift == 3 &&  count == 2 && c+1 != width)
                 {
-                    read_char(fin, pix);
+                    read_char(fin, code);
                     count = 0;
                 }
+                prev = pix;
             }
         }
    }
@@ -580,6 +601,8 @@ void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin,
     Vec3b xtmp;
     char count;
     unsigned char pix = 0;
+    unsigned char code;
+    double tmp_pix;
     char delta;
     int r, c;
     //A four level quantizer was used to encode the image
@@ -600,40 +623,49 @@ void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin,
             tmp = f.at<Vec3b>(r, 0);
             read_char(fin,pix);
             tmp[chan] = pix;
-            bit = q == 4? 3 : 7;
             f.at<Vec3b>(r,0) = tmp;
             count = 0;
-            read_char(fin,pix);
+            read_char(fin,code);
             for( c = 1; c < width; c++ )
             {
-                delta = 0;
                 if( r == 0 )
                 {
                     //if the r is 0 just keep reading row pixel values in until
                     //next row
                     if( c != 1)
-                        read_char(fin,pix);
+                        read_char(fin,code);
                     tmp = f.at<Vec3b>(r, c);
-                    tmp[chan] = pix;
-                    f.at<Vec3b>(r,0)[chan] = tmp[chan];
+                    tmp[chan] = code;
+                    f.at<Vec3b>(r,c) = tmp;
                 }
                 else
                 {
                     tmp  = f.at<Vec3b>(r,c);
                     xtmp = f.at<Vec3b>(r,c-1);
                     ytmp = f.at<Vec3b>(r-1,c);
-                    delta = get_delta(bit, shift, pix, count);
-                    tmp[chan] = second_predicter(xtmp[chan],ytmp[chan]) + delta;
-                    f.at<Vec3b>(r,c)[chan] = tmp[chan];
+                    
+                    delta = get_delta(bit, shift, code, count);
+                    
+                    tmp_pix = second_predicter(xtmp[chan],ytmp[chan]) + delta;
+
+                    if( tmp_pix > 255.0 )
+                        pix = 255;
+                    else if( tmp_pix < 0.0 )
+                        pix = 0;
+                    else
+                        pix = round(tmp_pix);
+
+                    tmp[chan] = pix;
+                    f.at<Vec3b>(r,c) = tmp;
                     count++;
                     if( shift == 2 && count == 4 && c+1 != width)
                     {
-                        read_char(fin, pix);
+                        read_char(fin, code);
                         count = 0;
                     }
                     else if( shift == 3 &&  count == 2 && c+1 != width)
                     {
-                        read_char(fin, pix);
+                        read_char(fin, code);
                         count = 0;
                     }
                 }
