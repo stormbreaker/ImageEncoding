@@ -3,7 +3,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <string>
-
+#include "../statistics/statistics.h"
 
 
 using namespace cv;
@@ -17,12 +17,12 @@ int main( int argc, char **argv)
 {
     string out_fname;
     string in_fname;
-
+    Mat f_dec;
     Mat f;
     int height;
     int width;
     char p, q;
-
+    int bits = 3;
     if( argc != 5 )
     {
         print_error(argc);
@@ -37,11 +37,22 @@ int main( int argc, char **argv)
     }
     p = atoi(argv[2]);
     q = atoi(argv[3]);
+    if( q == 4)
+        bits = 2;
     f = imread(argv[1], CV_LOAD_IMAGE_COLOR);
     height = f.rows;
     width = f.cols;
+    cout << "Encoding Image Using: " << out_fname << endl;
+    cout << "Image was encoded using "<< bits*3 <<"-bit per pixel." << endl;
     dpcm(f, height, width, p, q, out_fname.c_str());
-    dpcm_decoder(out_fname.c_str());
+    cout << endl;
+    cout << "Decoding Image" << endl;
+    f_dec = dpcm_decoder(out_fname.c_str());
+    cout << endl;
+    cout << "Root Mean Square: " << rootMeanSquare(f, f_dec) << endl; 
+    cout << "Signal to Noise Ratio: " << signalToNoise(f, f_dec) << endl;
+
+
 }
 
 void print_error(const int &argc)

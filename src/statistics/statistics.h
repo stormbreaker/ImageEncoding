@@ -14,5 +14,6 @@ using namespace std;
 using namespace cv;
 
 double rootMeanSquare(Mat image1, Mat image2);
-
+double MeanSquare( Mat image1, Mat image2);
+double signalToNoise( Mat iamge1, Mat image2); 
 #endif

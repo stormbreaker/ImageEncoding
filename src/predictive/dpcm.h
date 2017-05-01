@@ -23,7 +23,7 @@ void store_four( unsigned char &code, const double &edot);
 void dpcm( Mat f, const int &height, const int &width, const char &p, const char &q, const char *fname);
 void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, const char& levels, double (*qauntizer)(const double&) );
 void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, const char& levels, double (*qauntizer)(const double&) );
-void dpcm_decoder( const char *fname);
+Mat dpcm_decoder( const char *fname);
 void dpcm_first_dec( Mat f, const int &height, const int &width, ifstream &fin, const char &q);
 
 void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin, const char &q);

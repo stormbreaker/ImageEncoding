@@ -36,9 +36,9 @@ all: rle dpcm delta prev huff
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
 rle: runlength.o rlemain.o statistics.o
 	$(LINK) -o $@ $^ $(LIBS)
-dpcm: dpcm.o dpcm_main.o 
+dpcm: dpcm.o dpcm_main.o statistics.o 
 	$(LINK) -o $@ $^ $(LIBS)
-delta: delta_mod.o dm.o 
+delta: delta_mod.o dm.o statistics.o
 	$(LINK) -o $@ $^ $(LIBS)
 prev: previous_pixel.o 
 	$(LINK) -o $@ $^ $(LIBS)

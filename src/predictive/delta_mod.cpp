@@ -13,10 +13,10 @@
  *              0 if negative otherwise a 1
  *              
  ************************************************************************/
-void store_bit( char &code, const double &edot)
+void store_bit( unsigned char &code, const double &edot)
 {
     code <<= 1;
-    code =  edot < 0 ? code |  0 : code |  1;
+    code =  edot <= 0 ? code |  0 : code |  1;
 }
 /************************************************************************
  *  Function: write_char
@@ -26,7 +26,7 @@ void store_bit( char &code, const double &edot)
  *              edot the encoded character to be written
  *              
  ************************************************************************/
-void write_char( ofstream &fout, const char &edot)
+void write_char( ofstream &fout, const unsigned char &edot)
 {
     fout.write((char*)&edot,1);
 }
@@ -103,19 +103,15 @@ void delta_modulation(Mat f, const int &height, const int &width, const float &d
     double fdot;
     double en;
     double edot;
-    const double alpha =  1;
     char count = 0;
-    char code;
+    unsigned char code;
     int r, c;
+    int bytesWritten=11;
     char ext[3] = {'P', 'N', 'G'};
     Vec3b tmp;
-    if( f.type() == CV_8UC1 )
-    {
-        channels = 1;
-    }
     fout.open(fname, ios::out | ios::binary);
     write_header( fout, height, width, ext, delta );
-
+    bytesWritten = sizeof(float);
     for(unsigned char chan = 0; chan < channels; chan++)
     {
         for( r = 0; r < height; r++ )
@@ -125,31 +121,40 @@ void delta_modulation(Mat f, const int &height, const int &width, const float &d
             write_char(fout, tmp[chan]);
             fhat = tmp[chan];
             fdot = fhat;
-            fhat = dm_predictor( alpha, fhat);
             code = 0;
             count = 0;
             for( c = 1; c < width; c++ )
             {
                 tmp = f.at<Vec3b>(r, c);
                 fn = tmp[chan];
-                fhat = dm_predictor(alpha, fdot);
                 en = fn - fhat;
                 edot = dm_quantizer(en, delta);
                 fdot = edot + fhat;
+                //stores the delta sign in the codeword
                 store_bit( code, edot);
                 count++;
+                //if the code word is full write it out to the file and set the
+                //counter to zero
                 if( count == 8 )
                 {
+                    bytesWritten++;
                     write_char( fout, code);
                     count = 0;
+                    code = 0;
                 }
+                fhat = fdot;
             }
+            //if the number of columns in the image is not evenly divisible by 8
+            //write the last code out for that row to the file
             if( count != 0)
             {
+                bytesWritten++;
                 write_char( fout, code);
             }
         }
     }
+cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
+
 }
 /************************************************************************
  *  Function: dm_predictor
@@ -189,7 +194,7 @@ double inline dm_quantizer( const double &en, const double &delta )
  *  Parameters: fname is the file name to read in to start decoding.
  ************************************************************************/
 
-void delta_decoder(const char * fname)
+Mat delta_decoder(const char * fname)
 {
     Mat f;
     unsigned char channels = 3;
@@ -198,7 +203,7 @@ void delta_decoder(const char * fname)
     unsigned char encode;
     unsigned char prev;
     unsigned char pix;
-    char bit;
+    unsigned char bit;
     int r, c;
     int height, width;
     char ext[3];
@@ -216,21 +221,25 @@ void delta_decoder(const char * fname)
             prev = pix;
             bit = 1;
             f.at<Vec3b>(r,0) = tmp;
-            read_char( fin, encode);
+            read_char(fin, encode);
             for( c = 1; c < width; c++ )
             {
                 tmp = f.at<Vec3b>(r, c);
+                //if the encode & bit is zero the delta value at the position is
+                //negative so assign the current pixel to prev-delta otherwise
+                //it is prev+delta           
                 pix = ( encode & bit ) == 0 ? round(prev-delta) : round(prev + delta);
                 tmp[chan] = pix;
                 f.at<Vec3b>(r,c) = tmp;
-                prev = ( encode & bit ) == 0 ? round(prev-delta) : round( prev + delta);
+                //shift mask 1 to get next bit if its zero read next character
+                //in
                 bit <<= 1;
-                
-                if( bit == 0 )
+                if( bit == 0 && c + 1 != width )
                 {
                     bit = 1;
                     read_char( fin, encode);
                 }
+                prev = pix;
             }
         }
     }
@@ -242,6 +251,8 @@ void delta_decoder(const char * fname)
     name += "_decoded.";
     name += "png";
     imwrite(name, f);
+    cout << "Decoded Image Written To: " << name << endl;
+    return f;
 }
 
 
