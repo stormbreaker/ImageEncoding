@@ -41,7 +41,6 @@ void get_hist( int* hist, Mat img )
 	    for ( int r = 0; r < height; r++ )
 		    for ( int c = 0; c < width; c++ )
 			    hist[(int) img.at<Vec3b>( r, c )[chan]]++;
-
 	return;
 }
 
@@ -51,7 +50,6 @@ void prediction_1D( Mat f,Mat &f_hat )
     const int alpha = 1;
     int r, c;
     int pre;
-    unsigned char max = 0;
     for( r = 0; r < f.rows; r++ )
     {
         for( c = order; c < f.cols; c++ )
@@ -94,7 +92,7 @@ int main( int argc, char** argv )
     width = image.cols;
     entropy = calc_entropy( height, width, hist, 256);
     cout << "Entropy: " << entropy << endl;
-    cout << "Encoding with: " << ceil(entropy) << " bits/pixel" << endl;
+    cout << "Encoding will need: " << ceil(entropy) << " bits/pixel" << endl;
     cout << "Compression is limited to about 24/" << entropy << " or "<< ceil(24/entropy) <<":1" << endl;
     
    /* namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.

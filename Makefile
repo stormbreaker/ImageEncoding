@@ -31,7 +31,7 @@ debug: CFLAGS += -g
 debug: CXXFLAGS += -g
 debug: all
 #-----------------------------------------------------------------------
-all: rle dpcm delta prev huff
+all: rle dpcm delta prev huff 
 # MAKE allows the use of "wildcards", to make writing compilation instructions
 # a bit easier. GNU make uses $@ for the target and $^ for the dependencies.
 rle: runlength.o rlemain.o statistics.o

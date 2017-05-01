@@ -43,7 +43,7 @@ int main( int argc, char **argv)
     height = f.rows;
     width = f.cols;
     cout << "Encoding Image Using: " << out_fname << endl;
-    cout << "Image was encoded using "<< bits*3 <<"-bit per pixel." << endl;
+    cout << "Image was encoded using "<< bits*3 <<"-bits/pixel." << endl;
     dpcm(f, height, width, p, q, out_fname.c_str());
     cout << endl;
     cout << "Decoding Image" << endl;

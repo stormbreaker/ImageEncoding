@@ -111,7 +111,7 @@ double first_predicter(const double &fdot )
  ************************************************************************/
 double second_predicter( const double &xprev, const double &yprev)
 {
-    return .4 * xprev + .5 * yprev;
+    return .5 * xprev + .4 * yprev;
 }
 /************************************************************************
  *  Function: four_level
@@ -325,6 +325,9 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
     int r, c;
     Vec3b xtmp;
     Vec3b tmp;
+    int bytesWritten = 19;
+
+
     for( unsigned char chan = 0; chan < channels; chan++)
     {
         for( r = 0; r < height; r++ )
@@ -333,6 +336,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
             tmp = f.at<Vec3b>(r,c);
             tmp_image.at<Vec3b>(r,c) = tmp;
             write_char(fout, tmp[chan] );
+            bytesWritten++;
             fhat = tmp[chan];
             code = 0; 
             count = 0;
@@ -342,6 +346,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
                 tmp_image.at<Vec3b>(r,c) = tmp;
                 if( r == 0)
                 {
+                    bytesWritten++;
                     //write the initial row of the image since there are no
                     //pixels above them
                     write_char(fout,tmp[chan]);
@@ -362,6 +367,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
                         count+=2;
                         if( count == 8)
                         {
+                            bytesWritten++;
                             write_char( fout, code);
                             count = 0;
                             code = 0;
@@ -372,6 +378,7 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
                         count += 3;
                         if( count == 6)
                         {
+                            bytesWritten++;
                             write_char( fout, code );
                             count = 0;
                             code = 0;
@@ -383,9 +390,15 @@ void dpcm_second( Mat f, const int &height, const int &width, ofstream &fout, co
             //if the number of bits don't fill a byte write anyway and go to
             //next row in the image
             if( count != 0)
+            {
+                bytesWritten++;
                 write_char( fout, code);
+            }
         }
     }
+cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
+
+
 }
 /************************************************************************
  *  Function:dpcm_first
@@ -411,6 +424,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
     double edot;
     char count = 0;
     int r, c;
+    int bytesWritten = 19;
     Vec3b xtmp;
     Vec3b tmp;
     if( f.type() == CV_8UC1 )
@@ -422,6 +436,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
             c = 0;
             tmp = f.at<Vec3b>(r,c);
             fn = tmp[chan];
+            bytesWritten++;
             write_char(fout, fn );
             fhat = fn;
             fdot = fhat;
@@ -440,7 +455,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
                     count+=2;
                     if( count == 8)
                     {
-
+                        bytesWritten++;
                         write_char( fout, code);
                         count = 0;
                         code = 0;
@@ -451,6 +466,7 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
                     count += 3;
                     if( count == 6)
                     {
+                        bytesWritten++;
                         write_char( fout, code );
                         count = 0;
                         code = 0;
@@ -459,9 +475,15 @@ void dpcm_first( Mat f, const int &height, const int &width, ofstream &fout, con
                 fhat = first_predicter( fdot);
             }
             if( count != 0)
+            {
+                bytesWritten++;
                 write_char( fout, code);
+            }
         }
     }
+    cout << "Compression Rate: " << ( 1.0 - bytesWritten / ( height * width * 3.0) ) * 100.0 << "%" << endl;
+
+
 }
 /************************************************************************
  *  Function:dpcm_first
@@ -557,7 +579,7 @@ void dpcm_first_dec( Mat f, const int &height, const int &width, ifstream &fin, 
                 else if( prev+delta < 0.0 )
                     pix = 0;
                 else
-                    pix = round(prev + delta);  
+                    pix = ceil(prev + delta);  
                 
                 
                 
@@ -653,7 +675,7 @@ void dpcm_second_dec( Mat f, const int &height, const int &width, ifstream &fin,
                     else if( tmp_pix < 0.0 )
                         pix = 0;
                     else
-                        pix = round(tmp_pix);
+                        pix = ceil(tmp_pix);
 
                     tmp[chan] = pix;
                     f.at<Vec3b>(r,c) = tmp;
@@ -704,7 +726,7 @@ double get_delta( char bit, char shift, char pix, char count)
  ************************************************************************/
 double decode_4_level( char bit, char pix, char count)
 {
-    char tmp = pix & (bit << (count * 2));
+    unsigned char tmp = pix & (bit << (count * 2));
     tmp = tmp >> (count*2);
     if(!flag)//if a second order encoder was used
         return four_levels_second[(int)tmp];

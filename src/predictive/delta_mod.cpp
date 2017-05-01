@@ -204,6 +204,7 @@ Mat delta_decoder(const char * fname)
     unsigned char prev;
     unsigned char pix;
     unsigned char bit;
+    double temp;
     int r, c;
     int height, width;
     char ext[3];
@@ -228,7 +229,15 @@ Mat delta_decoder(const char * fname)
                 //if the encode & bit is zero the delta value at the position is
                 //negative so assign the current pixel to prev-delta otherwise
                 //it is prev+delta           
-                pix = ( encode & bit ) == 0 ? round(prev-delta) : round(prev + delta);
+                temp = ( encode & bit ) == 0 ? round(prev-delta) : round(prev + delta);
+                if( temp > 255.0 )
+                    pix = 255;
+                else if( temp < 0.0 )
+                    pix = 0;
+                else 
+                    pix = temp;
+                
+                
                 tmp[chan] = pix;
                 f.at<Vec3b>(r,c) = tmp;
                 //shift mask 1 to get next bit if its zero read next character
